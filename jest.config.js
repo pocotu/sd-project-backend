@@ -1,9 +1,9 @@
 export default {
   testEnvironment: 'node',
   transform: {},
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-  },
+  // moduleNameMapper: {
+  //   '^(\.{1,2}/.*)\.js$': '$1',
+  // },
   testMatch: ['**/tests/**/*.test.js'],
   setupFiles: ['dotenv/config'],
   verbose: true,

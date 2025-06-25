@@ -146,6 +146,24 @@ export class CategoryValidator extends BaseValidator {
         .trim()
         .isLength({ min: 10 })
         .withMessage('La descripción debe tener al menos 10 caracteres'),
+      body('slug')
+        .optional()
+        .trim()
+        .isLength({ min: 3 })
+        .withMessage('El slug debe tener al menos 3 caracteres'),
+      body('parentId')
+        .optional()
+        .isInt()
+        .withMessage('El parentId debe ser un número entero'),
+      body('imageUrl')
+        .optional()
+        .isString(),
+      body('isActive')
+        .optional()
+        .isBoolean(),
+      body('order')
+        .optional()
+        .isInt(),
       BaseValidator.validate
     ];
   }
@@ -162,6 +180,62 @@ export class CategoryValidator extends BaseValidator {
         .trim()
         .isLength({ min: 10 })
         .withMessage('La descripción debe tener al menos 10 caracteres'),
+      body('slug')
+        .optional()
+        .trim()
+        .isLength({ min: 3 })
+        .withMessage('El slug debe tener al menos 3 caracteres'),
+      body('parentId')
+        .optional()
+        .isInt(),
+      body('imageUrl')
+        .optional()
+        .isString(),
+      body('isActive')
+        .optional()
+        .isBoolean(),
+      body('order')
+        .optional()
+        .isInt(),
+      BaseValidator.validate
+    ];
+  }
+}
+
+// Validador para lotes (SRP: Responsabilidad única para validación de lotes)
+export class LoteValidator extends BaseValidator {
+  static validateCreate() {
+    return [
+      body('numeroLote')
+        .notEmpty().withMessage('El número de lote es obligatorio')
+        .isLength({ min: 3 }).withMessage('El número de lote debe tener al menos 3 caracteres'),
+      body('fechaProduccion')
+        .notEmpty().withMessage('La fecha de producción es obligatoria')
+        .isISO8601().withMessage('La fecha de producción debe ser válida'),
+      body('fechaCaducidad')
+        .optional({ nullable: true })
+        .isISO8601().withMessage('La fecha de caducidad debe ser válida'),
+      body('estado')
+        .optional()
+        .isIn(['activo', 'agotado', 'vencido']).withMessage('Estado inválido'),
+      BaseValidator.validate
+    ];
+  }
+
+  static validateUpdate() {
+    return [
+      body('numeroLote')
+        .optional()
+        .isLength({ min: 3 }).withMessage('El número de lote debe tener al menos 3 caracteres'),
+      body('fechaProduccion')
+        .optional()
+        .isISO8601().withMessage('La fecha de producción debe ser válida'),
+      body('fechaCaducidad')
+        .optional({ nullable: true })
+        .isISO8601().withMessage('La fecha de caducidad debe ser válida'),
+      body('estado')
+        .optional()
+        .isIn(['activo', 'agotado', 'vencido']).withMessage('Estado inválido'),
       BaseValidator.validate
     ];
   }
@@ -178,4 +252,4 @@ export function validateRequest(req, res, next) {
     });
   }
   next();
-} 
+}

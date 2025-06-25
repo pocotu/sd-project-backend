@@ -56,4 +56,4 @@ class DatabaseConnection {
 
 // Singleton instance
 const databaseConnection = new DatabaseConnection();
-export default databaseConnection; 
+export default databaseConnection.getInstance(); 

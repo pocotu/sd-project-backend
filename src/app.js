@@ -39,6 +39,9 @@ class ExpressConfig {
       logger.info(`${req.method} ${req.url}`);
       next();
     });
+
+    // Configuración de archivos estáticos para imágenes de productos
+    this.app.use('/uploads/products', express.static('uploads/products'));
   }
 
   setupRoutes() {

@@ -2,7 +2,7 @@ import { Model } from 'sequelize';
 
 export class BaseModel extends Model {
   static init(attributes, options) {
-    super.init(attributes, {
+    return super.init(attributes, {
       ...options,
       timestamps: true,
       paranoid: true, // Soft deletes

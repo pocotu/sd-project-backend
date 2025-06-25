@@ -18,7 +18,8 @@ export class BaseRepository {
   async update(id, data) {
     const instance = await this.model.findByPk(id);
     if (!instance) return null;
-    return await instance.update(data);
+    await instance.update(data);
+    return instance;
   }
 
   async delete(id) {
@@ -27,4 +28,4 @@ export class BaseRepository {
     await instance.destroy();
     return true;
   }
-} 
+}

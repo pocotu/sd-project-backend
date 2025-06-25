@@ -1,0 +1,54 @@
+import express from 'express';
+const router = express.Router();
+
+// Rutas de productos
+router.get('/', (req, res) => {
+  res.status(501).json({
+    status: 'error',
+    message: 'Endpoint en construcción'
+  });
+});
+
+router.get('/:id', (req, res) => {
+  res.status(501).json({
+    status: 'error',
+    message: 'Endpoint en construcción'
+  });
+});
+
+router.post('/', (req, res) => {
+  res.status(501).json({
+    status: 'error',
+    message: 'Endpoint en construcción'
+  });
+});
+
+router.put('/:id', (req, res) => {
+  res.status(501).json({
+    status: 'error',
+    message: 'Endpoint en construcción'
+  });
+});
+
+router.delete('/:id', (req, res) => {
+  res.status(501).json({
+    status: 'error',
+    message: 'Endpoint en construcción'
+  });
+});
+
+router.get('/search', (req, res) => {
+  res.status(501).json({
+    status: 'error',
+    message: 'Endpoint en construcción'
+  });
+});
+
+router.get('/featured', (req, res) => {
+  res.status(501).json({
+    status: 'error',
+    message: 'Endpoint en construcción'
+  });
+});
+
+export default router; 

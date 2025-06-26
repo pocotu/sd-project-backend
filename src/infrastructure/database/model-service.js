@@ -1,10 +1,32 @@
-import { createUserModel } from '../../models/user.model.js';
+import { 
+  User, 
+  Role, 
+  Product, 
+  Category, 
+  ProducerProfile, 
+  Lote, 
+  ProductoLote, 
+  ImagenProducto, 
+  Review, 
+  SellerRating, 
+  Contact 
+} from '../../models/index.js';
 
 class ModelService {
   constructor(database) {
     this.database = database;
     this.models = {
-      User: createUserModel(database)
+      User,
+      Role,
+      Product,
+      Category,
+      ProducerProfile,
+      Lote,
+      ProductoLote,
+      ImagenProducto,
+      Review,
+      SellerRating,
+      Contact
     };
   }
 
@@ -27,4 +49,4 @@ class ModelService {
   }
 }
 
-export const createModelService = (database) => new ModelService(database); 
+export const createModelService = (database) => new ModelService(database);

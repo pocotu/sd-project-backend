@@ -1,26 +1,48 @@
-// Setup global para tests - Suprimir logs innecesarios
-beforeAll(() => {
-  // Guardar las funciones originales
-  global.originalConsoleLog = console.log;
-  global.originalConsoleError = console.error;
+import { jest } from '@jest/globals';
+import { logger } from '../infrastructure/utils/logger.js';
+
+// Función de ayuda para suprimir console.log durante los tests
+const suppressConsoleOutput = () => {
+  const originalLog = console.log;
+  const originalInfo = console.info;
   
-  // Suprimir console.log y console.error durante tests
-  if (process.env.NODE_ENV === 'test') {
-    console.log = () => {};
-    console.error = () => {};
-  }
+  beforeAll(() => {
+    console.log = jest.fn();
+    console.info = jest.fn();
+    logger.level = process.env.DEBUG ? 'debug' : 'error';
+  });
+  
+  afterAll(() => {
+    console.log = originalLog;
+    console.info = originalInfo;
+  });
+};
+
+// Configurar timeouts más largos para Windows
+beforeAll(() => {
+  jest.setTimeout(30000);
 });
 
-afterAll(() => {
-  // Restaurar las funciones originales
-  if (global.originalConsoleLog) {
-    console.log = global.originalConsoleLog;
-  }
-  if (global.originalConsoleError) {
-    console.error = global.originalConsoleError;
-  }
+// Suprimir logs si no estamos en modo debug
+if (!process.env.DEBUG) {
+  suppressConsoleOutput();
+}
+
+// Manejar errores no capturados
+process.on('unhandledRejection', (error) => {
+  logger.error('Unhandled Promise Rejection in tests:', error);
+});
+
+// Configurar limpieza después de cada test
+afterEach(() => {
+  jest.clearAllMocks();
+});
+
+// Configurar limpieza después de todos los tests
+afterAll(async () => {
+  await new Promise(resolve => setTimeout(resolve, 500));
 });
 
 // Configurar variables de entorno para tests
 process.env.NODE_ENV = 'test';
-process.env.SUPPRESS_TEST_LOGS = 'true'; 
+process.env.SUPPRESS_TEST_LOGS = 'true';

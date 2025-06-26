@@ -9,35 +9,34 @@ export class CategoryService {
   async createCategory(data) {
     try {
       // Validación de unicidad a nivel de servicio para OCP
-      const existing = await this.categoryRepository.model.findOne({ where: { name: data.name } });
+      const existing = await this.categoryRepository.model.findOne({ where: { nombre: data.nombre } });
       if (existing) {
         const error = new Error('El nombre de la categoría ya existe');
         error.name = 'SequelizeUniqueConstraintError';
         throw error;
       }
       // Generar slug automáticamente si no se envía
-      const slug = data.slug || slugify(data.name, { lower: true, strict: true });
-      // Asegurar que createdAt se envía siempre
+      const slug = data.slug || slugify(data.nombre, { lower: true, strict: true });
       const createdAt = new Date();
       // Log para depuración
       console.log('[CategoryService][createCategory] Data enviada a create:', {
-        name: data.name,
-        description: data.description,
+        nombre: data.nombre,
+        descripcion: data.descripcion,
         slug,
-        parentId: data.parentId || null,
-        imageUrl: data.imageUrl || null,
-        isActive: data.isActive !== undefined ? data.isActive : true,
-        order: data.order || 0
+        parent_id: data.parent_id || null,
+        imagen_url: data.imagen_url || null,
+        activo: data.activo !== undefined ? data.activo : 1,
+        orden: data.orden || 0
       });
       return await this.categoryRepository.create({
-        name: data.name,
-        description: data.description,
+        nombre: data.nombre,
+        descripcion: data.descripcion,
         slug,
-        parentId: data.parentId || null,
-        imageUrl: data.imageUrl || null,
-        isActive: data.isActive !== undefined ? data.isActive : true,
-        order: data.order || 0,
-        createdAt
+        parent_id: data.parent_id || null,
+        imagen_url: data.imagen_url || null,
+        activo: data.activo !== undefined ? data.activo : 1,
+        orden: data.orden || 0,
+        created_at: createdAt
       });
     } catch (error) {
       console.error('[CategoryService][createCategory] Error:', error);
@@ -54,8 +53,8 @@ export class CategoryService {
   }
 
   async updateCategory(id, data) {
-    if (data.name) {
-      const existing = await this.categoryRepository.model.findOne({ where: { name: data.name } });
+    if (data.nombre) {
+      const existing = await this.categoryRepository.model.findOne({ where: { nombre: data.nombre } });
       if (existing && existing.id !== parseInt(id)) {
         const error = new Error('El nombre de la categoría ya existe');
         error.name = 'SequelizeUniqueConstraintError';
@@ -63,8 +62,8 @@ export class CategoryService {
       }
     }
     // Si se actualiza el nombre, actualizar el slug también
-    if (data.name && !data.slug) {
-      data.slug = slugify(data.name, { lower: true, strict: true });
+    if (data.nombre && !data.slug) {
+      data.slug = slugify(data.nombre, { lower: true, strict: true });
     }
     return await this.categoryRepository.update(id, data);
   }

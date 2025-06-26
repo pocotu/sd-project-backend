@@ -1,6 +1,5 @@
 import express from 'express';
-import { body } from 'express-validator';
-import { UserValidator, validateRequest } from '../middlewares/validation.middleware.js';
+import { AuthValidator } from '../middlewares/auth.validation.middleware.js';
 import { AuthMiddleware } from '../middlewares/auth.middleware.js';
 import { AuthController } from '../controllers/auth.controller.js';
 
@@ -10,22 +9,13 @@ const authController = new AuthController();
 // Rutas de autenticación
 router.post(
   '/register',
-  UserValidator.validateCreate(),
+  AuthValidator.validateRegister(),
   authController.register.bind(authController)
 );
 
 router.post(
   '/login',
-  [
-    body('email')
-      .isEmail()
-      .withMessage('Email inválido')
-      .normalizeEmail(),
-    body('password')
-      .notEmpty()
-      .withMessage('La contraseña es obligatoria'),
-    validateRequest
-  ],
+  AuthValidator.validateLogin(),
   authController.login.bind(authController)
 );
 
@@ -45,4 +35,4 @@ router.post(
   authController.resetPassword.bind(authController)
 );
 
-export default router; 
+export default router;

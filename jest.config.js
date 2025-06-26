@@ -1,20 +1,21 @@
 export default {
   testEnvironment: 'node',
-  transform: {},
-  // moduleNameMapper: {
-  //   '^(\.{1,2}/.*)\.js$': '$1',
-  // },
+  transform: {
+    '^.+\\.js$': ['babel-jest', { presets: ['@babel/preset-env'] }]
+  },
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1'
+  },
   testMatch: ['**/tests/**/*.test.js'],
   setupFiles: ['dotenv/config'],
+  setupFilesAfterEnv: ['<rootDir>/src/tests/setup.js'],
   verbose: true,
   forceExit: true,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
   testTimeout: 30000,
-  // Configuración de workers para tests de integración
   maxWorkers: 1,
-  // Configuración de coverage
   collectCoverageFrom: [
     'src/**/*.js',
     '!src/tests/**',
@@ -23,8 +24,7 @@ export default {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  // Suprimir logs durante tests
-  silent: false,
-  // Configurar setup para suprimir console.log
-  setupFilesAfterEnv: ['<rootDir>/src/tests/setup.js'],
-}; 
+  testEnvironmentOptions: {
+    url: 'http://localhost'
+  }
+};

@@ -5,38 +5,45 @@ const Lote = sequelize.define('Lote', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    field: 'id'
   },
-  numeroLote: {
-    type: DataTypes.STRING,
+  numero_lote: {
+    type: DataTypes.STRING(50),
     allowNull: false,
-    unique: true
+    unique: true,
+    field: 'numero_lote'
   },
-  fechaProduccion: {
+  fecha_produccion: {
     type: DataTypes.DATEONLY,
-    allowNull: false
+    allowNull: false,
+    field: 'fecha_produccion'
   },
-  fechaCaducidad: {
+  fecha_caducidad: {
     type: DataTypes.DATEONLY,
-    allowNull: true
+    allowNull: true,
+    field: 'fecha_caducidad'
   },
-  notasProduccion: {
+  notas_produccion: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    field: 'notas_produccion'
   },
   estado: {
     type: DataTypes.ENUM('activo', 'agotado', 'vencido'),
+    allowNull: false,
     defaultValue: 'activo',
-    allowNull: false
+    field: 'estado'
   },
-  createdAt: {
+  created_at: {
     type: DataTypes.DATE,
     allowNull: false,
-    defaultValue: DataTypes.NOW
+    defaultValue: DataTypes.NOW,
+    field: 'created_at'
   }
 }, {
-  tableName: 'lotes',
+  tableName: 'LOTES',
   timestamps: false
 });
 
-export default Lote; 
+export default Lote;

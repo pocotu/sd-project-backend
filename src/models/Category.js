@@ -8,52 +8,53 @@ const Category = sequelize.define('Category', {
     autoIncrement: true,
     field: 'id'
   },
-  name: {
-    type: DataTypes.STRING,
+  nombre: {
+    type: DataTypes.STRING(100),
     allowNull: false,
-    unique: true,
     field: 'nombre'
   },
-  description: {
+  descripcion: {
     type: DataTypes.TEXT,
     allowNull: true,
     field: 'descripcion'
   },
   slug: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(150),
     allowNull: false,
     unique: true,
     field: 'slug'
   },
-  parentId: {
+  parent_id: {
     type: DataTypes.INTEGER,
     allowNull: true,
     field: 'parent_id'
   },
-  imageUrl: {
-    type: DataTypes.STRING,
+  imagen_url: {
+    type: DataTypes.STRING(255),
     allowNull: true,
     field: 'imagen_url'
   },
-  isActive: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true,
+  activo: {
+    type: DataTypes.TINYINT(1),
+    defaultValue: 1,
+    allowNull: false,
     field: 'activo'
   },
-  order: {
+  orden: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
+    allowNull: false,
     field: 'orden'
   },
-  createdAt: {
+  created_at: {
     type: DataTypes.DATE,
     allowNull: false,
+    defaultValue: DataTypes.NOW,
     field: 'created_at'
   }
 }, {
   tableName: 'CATEGORIAS',
-  timestamps: false,
-  paranoid: false
+  timestamps: false
 });
 
 export default Category;

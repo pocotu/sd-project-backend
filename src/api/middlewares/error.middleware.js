@@ -62,3 +62,38 @@ export const errorHandler = (err, req, res, next) => {
   }
 };
 
+export class ErrorMiddleware {
+  static handle(err, req, res, next) {
+    logger.error('Error:', err);
+
+    // Si estamos en modo de prueba, incluir más detalles del error
+    const isTestEnvironment = process.env.NODE_ENV === 'test';
+    
+    const error = {
+      status: 'error',
+      message: err.message || 'Error interno del servidor',
+      ...(isTestEnvironment && {
+        stack: err.stack,
+        name: err.name,
+        code: err.code
+      })
+    };
+
+    // Determinar el código de estado HTTP apropiado
+    let statusCode = err.statusCode || 500;
+
+    // Manejar errores específicos
+    if (err.name === 'ValidationError') {
+      statusCode = 400;
+    } else if (err.name === 'UnauthorizedError' || err.name === 'JsonWebTokenError') {
+      statusCode = 401;
+    } else if (err.name === 'ForbiddenError') {
+      statusCode = 403;
+    } else if (err.name === 'NotFoundError') {
+      statusCode = 404;
+    }
+
+    res.status(statusCode).json(error);
+  }
+}
+

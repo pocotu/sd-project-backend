@@ -1,22 +1,39 @@
-import { DataTypes } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../../infrastructure/database/sequelize.js';
 
-export const Role = sequelize.define('Role', {
+class Role extends Model {}
+
+Role.init({
   id: {
-    type: DataTypes.UUID,
+    type: DataTypes.CHAR(36),
     primaryKey: true,
-    defaultValue: DataTypes.UUIDV4
+    allowNull: false
   },
   nombre: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     allowNull: false,
-    unique: true
+    unique: true,
+    field: 'nombre'
   },
   descripcion: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  activo: {
+    type: DataTypes.TINYINT,
+    allowNull: false,
+    defaultValue: 1
+  },
+  created_at: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
+  sequelize,
+  modelName: 'Role',
   tableName: 'roles',
   timestamps: false
-}); 
+});
+
+export { Role };

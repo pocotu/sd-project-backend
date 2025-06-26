@@ -1,48 +1,62 @@
-export default {
+const migration = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('categories', {
+    await queryInterface.createTable('CATEGORIAS', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },
-      name: {
-        type: Sequelize.STRING,
+      nombre: {
+        type: Sequelize.STRING(100),
         allowNull: false,
-        unique: true,
       },
-      description: {
+      descripcion: {
         type: Sequelize.TEXT,
         allowNull: true,
       },
-      parentId: {
+      slug: {
+        type: Sequelize.STRING(150),
+        allowNull: false,
+        unique: true,
+      },
+      parent_id: {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
-          model: 'categories',
+          model: 'CATEGORIAS',
           key: 'id'
-        }
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       },
-      isActive: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: true,
-      },
-      createdAt: {
-        type: Sequelize.DATE,
-        allowNull: false,
-      },
-      updatedAt: {
-        type: Sequelize.DATE,
-        allowNull: false,
-      },
-      deletedAt: {
-        type: Sequelize.DATE,
+      imagen_url: {
+        type: Sequelize.STRING(255),
         allowNull: true,
       },
+      activo: {
+        type: Sequelize.TINYINT(1),
+        defaultValue: 1,
+        allowNull: false
+      },
+      orden: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0,
+        allowNull: false
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+      }
     });
+    
+    await queryInterface.addIndex('CATEGORIAS', ['activo'], { name: 'idx_categorias_activo' });
+    await queryInterface.addIndex('CATEGORIAS', ['orden'], { name: 'idx_categorias_orden' });
   },
-
+  
   down: async (queryInterface) => {
-    await queryInterface.dropTable('categories');
+    await queryInterface.dropTable('CATEGORIAS');
   },
-}; 
+};
+
+export default migration;

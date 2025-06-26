@@ -8,9 +8,10 @@ export class ProductService {
   }
 
   async createProduct(data, imageFile) {
-    if (!imageFile) throw new Error('La imagen es obligatoria');
-    const imageUrl = `/uploads/products/${imageFile.filename}`;
-    return await this.productRepository.create({ ...data, imageUrl });
+    // El campo imagen es opcional en la tabla real, pero si se requiere, descomentar la siguiente línea:
+    // if (!imageFile) throw new Error('La imagen es obligatoria');
+    // const imagen_url = imageFile ? `/uploads/products/${imageFile.filename}` : null;
+    return await this.productRepository.create({ ...data });
   }
 
   async getAllProducts() {
@@ -24,28 +25,28 @@ export class ProductService {
   async updateProduct(id, data, imageFile) {
     const product = await this.productRepository.findById(id);
     if (!product) throw new Error('Producto no encontrado');
-    let imageUrl = product.imageUrl;
-    if (imageFile) {
-      // Eliminar imagen anterior si existe
-      if (imageUrl) {
-        const oldPath = path.join(process.cwd(), imageUrl);
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-      }
-      imageUrl = `/uploads/products/${imageFile.filename}`;
-    }
-    return await this.productRepository.update(id, { ...data, imageUrl });
+    // Imagen opcional
+    // let imagen_url = product.imagen_url;
+    // if (imageFile) {
+    //   if (imagen_url) {
+    //     const oldPath = path.join(process.cwd(), imagen_url);
+    //     if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    //   }
+    //   imagen_url = `/uploads/products/${imageFile.filename}`;
+    // }
+    return await this.productRepository.update(id, { ...data });
   }
 
   async deleteProduct(id) {
     const product = await this.productRepository.findById(id);
     if (!product) throw new Error('Producto no encontrado');
-    // Eliminar imagen asociada
-    if (product.imageUrl) {
-      const imgPath = path.join(process.cwd(), product.imageUrl);
-      if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-    }
+    // Imagen opcional
+    // if (product.imagen_url) {
+    //   const imgPath = path.join(process.cwd(), product.imagen_url);
+    //   if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+    // }
     return await this.productRepository.delete(id);
   }
 }
 
-export const productService = new ProductService(); 
+export const productService = new ProductService();

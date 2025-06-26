@@ -241,6 +241,75 @@ export class LoteValidator extends BaseValidator {
   }
 }
 
+// Validador para perfiles de productor (SRP)
+export class ProducerProfileValidator extends BaseValidator {
+  static validateCreate() {
+    return [
+      body('nombre_negocio')
+        .trim()
+        .notEmpty()
+        .withMessage('El nombre del negocio es obligatorio')
+        .isLength({ min: 3 })
+        .withMessage('El nombre del negocio debe tener al menos 3 caracteres'),
+      body('ubicacion')
+        .trim()
+        .notEmpty()
+        .withMessage('La ubicación es obligatoria'),
+      body('bio')
+        .optional()
+        .trim()
+        .isLength({ max: 500 })
+        .withMessage('La descripción no debe exceder 500 caracteres'),
+      body('telefono')
+        .optional()
+        .matches(/^\+?[\d\s\-\(\)]+$/)
+        .withMessage('El teléfono debe ser válido'),
+      body('whatsapp')
+        .optional()
+        .matches(/^\+?[\d\s\-\(\)]+$/)
+        .withMessage('El WhatsApp debe ser válido'),
+      body('sitio_web')
+        .optional()
+        .isURL()
+        .withMessage('El sitio web debe ser una URL válida'),
+      BaseValidator.validate
+    ];
+  }
+
+  static validateUpdate() {
+    return [
+      body('nombre_negocio')
+        .optional()
+        .trim()
+        .isLength({ min: 3 })
+        .withMessage('El nombre del negocio debe tener al menos 3 caracteres'),
+      body('ubicacion')
+        .optional()
+        .trim()
+        .notEmpty()
+        .withMessage('La ubicación no puede estar vacía'),
+      body('bio')
+        .optional()
+        .trim()
+        .isLength({ max: 500 })
+        .withMessage('La descripción no debe exceder 500 caracteres'),
+      body('telefono')
+        .optional()
+        .matches(/^\+?[\d\s\-\(\)]+$/)
+        .withMessage('El teléfono debe ser válido'),
+      body('whatsapp')
+        .optional()
+        .matches(/^\+?[\d\s\-\(\)]+$/)
+        .withMessage('El WhatsApp debe ser válido'),
+      body('sitio_web')
+        .optional()
+        .isURL()
+        .withMessage('El sitio web debe ser una URL válida'),
+      BaseValidator.validate
+    ];
+  }
+}
+
 // Middleware reutilizable para validación de request
 export function validateRequest(req, res, next) {
   const errors = validationResult(req);

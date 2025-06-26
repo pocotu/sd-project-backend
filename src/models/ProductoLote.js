@@ -5,44 +5,67 @@ const ProductoLote = sequelize.define('ProductoLote', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    field: 'id'
   },
-  productoId: {
-    type: DataTypes.INTEGER,
-    allowNull: false
-  },
-  loteId: {
-    type: DataTypes.INTEGER,
-    allowNull: false
-  },
-  cantidadInicial: {
-    type: DataTypes.INTEGER,
-    allowNull: false
-  },
-  cantidadActual: {
-    type: DataTypes.INTEGER,
-    allowNull: false
-  },
-  cantidadReservada: {
+  producto_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    defaultValue: 0
+    field: 'producto_id',
+    references: {
+      model: 'PRODUCTOS',
+      key: 'id'
+    }
   },
-  createdAt: {
+  lote_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'lote_id',
+    references: {
+      model: 'LOTES',
+      key: 'id'
+    }
+  },
+  cantidad_inicial: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      min: 0
+    },
+    field: 'cantidad_inicial'
+  },
+  cantidad_actual: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      min: 0
+    },
+    field: 'cantidad_actual'
+  },
+  cantidad_reservada: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    validate: {
+      min: 0
+    },
+    field: 'cantidad_reservada'
+  },
+  created_at: {
     type: DataTypes.DATE,
     allowNull: false,
-    defaultValue: DataTypes.NOW
+    defaultValue: DataTypes.NOW,
+    field: 'created_at'
   },
-  updatedAt: {
+  updated_at: {
     type: DataTypes.DATE,
     allowNull: false,
-    defaultValue: DataTypes.NOW
+    defaultValue: DataTypes.NOW,
+    field: 'updated_at'
   }
 }, {
-  tableName: 'producto_lotes',
-  timestamps: true,
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  tableName: 'PRODUCTO_LOTES',
+  timestamps: false
 });
 
-export default ProductoLote; 
+export default ProductoLote;

@@ -1,4 +1,4 @@
-import { User } from '../../domain/models/user.model.js';
+import User from '../../models/User.js';
 import { BaseRepository } from './base.repository.js';
 
 export class UserRepository extends BaseRepository {

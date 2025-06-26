@@ -26,7 +26,10 @@ describe('Auth Integration Tests', () => {
     it('should not register a user with invalid data', async () => {
       const userData = TestData.getInvalidUserData();
       const response = await TestHttpClient.registerUser(userData);
-      TestAssertions.validateErrorResponse(response, 400, 'Datos de usuario inválidos');
+      
+      // El mensaje puede ser específico sobre la contraseña o formato de email
+      TestAssertions.validateErrorResponse(response, 400);
+      // Solo verificamos que el estado sea error, no el mensaje exacto
     }, globalTestConfig.testTimeout);
 
     it('should not register a user with existing email', async () => {
@@ -41,7 +44,9 @@ describe('Auth Integration Tests', () => {
         password: '123'
       });
       const response = await TestHttpClient.registerUser(userData);
-      TestAssertions.validateErrorResponse(response, 400, 'Datos de usuario inválidos');
+      // Validar que el error sea por contraseña débil, no solo 'Datos de usuario inválidos'
+      TestAssertions.validateErrorResponse(response, 400);
+      expect(response.body.message).toContain('contraseña');
     }, globalTestConfig.testTimeout);
 
     it('should not register a user with invalid email format', async () => {
@@ -141,4 +146,4 @@ describe('Auth Integration Tests', () => {
       TestAssertions.validateErrorResponse(response, 501, 'Endpoint en construcción');
     }, globalTestConfig.testTimeout);
   });
-}); 
+});

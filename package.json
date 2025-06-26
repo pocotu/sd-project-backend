@@ -7,14 +7,18 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
-    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
-    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=src/tests/integration",
-    "test:integration:auth": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=src/tests/integration/auth",
-    "test:db": "node src/database/test-migrations.js",
-    "migrate": "sequelize-cli db:migrate",
-    "seed": "sequelize-cli db:seed:all"
+    "pretest": "cross-env NODE_ENV=test node src/scripts/reset-test-db.js",
+    "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --testTimeout=30000 --detectOpenHandles",
+    "test:watch": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --watch --testTimeout=30000",
+    "test:coverage": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --testTimeout=30000",
+    "test:integration": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --testTimeout=30000 --testPathPattern=src/tests/integration",
+    "test:auth": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --testTimeout=30000 --testPathPattern=src/tests/integration/auth",
+    "test:producerProfile": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --testTimeout=30000 --testPathPattern=src/tests/integration/producerProfile.test.js",
+    "test:db:reset": "cross-env NODE_ENV=test node src/scripts/reset-test-db.js",
+    "migrate": "cross-env NODE_ENV=development node src/scripts/migrate-ordered.js",
+    "seed": "cross-env NODE_ENV=development node src/scripts/migrate-ordered.js --seed",
+    "migrate:test": "cross-env NODE_ENV=test node src/scripts/migrate-ordered.js",
+    "seed:test": "cross-env NODE_ENV=test node src/scripts/migrate-ordered.js --seed"
   },
   "keywords": [],
   "author": "kai",
@@ -36,8 +40,11 @@
     "winston": "^3.8.2"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.27.2",
     "@eslint/eslintrc": "^3.3.1",
+    "babel-jest": "^29.7.0",
     "bcrypt": "^6.0.0",
+    "cross-env": "^7.0.3",
     "eslint": "^9.29.0",
     "jest": "^29.7.0",
     "nodemon": "^2.0.22",

@@ -510,7 +510,7 @@ export class TestDatabase {
         try {
           const jwt = await import('jsonwebtoken');
           const jwtLib = jwt.default || jwt;
-          const decoded = jwtLib.verify(authToken, process.env.JWT_SECRET || 'your-secret-key');
+          const decoded = jwtLib.verify(authToken, process.env.JWT_SECRET);
           user = await User.findByPk(decoded.id);
           
           if (!user) {
@@ -994,7 +994,7 @@ export const getTestToken = async (userData = null) => {
         email: user.email,
         roleId: user.roleId 
       },
-      process.env.JWT_SECRET || 'test-secret',
+      process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
     return { token, user };
@@ -1013,7 +1013,7 @@ export const generateTokenForUser = (user) => {
         email: user.email,
         roleId: user.roleId 
       },
-      process.env.JWT_SECRET || 'test-secret',
+      process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
     return token;

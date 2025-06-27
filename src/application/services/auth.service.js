@@ -150,35 +150,22 @@ class AuthService {
 
   async verifyToken(token) {
     try {
-      // Para pruebas, aceptamos el token fijo
-      if (token === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMzQ1Njc4LTkwYWItMTJjMy0zNGQ1LTU2Nzg5MGFiY2RlZiIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsInJvbGVJZCI6IjEyMzQ1Njc4LTkwYWItMTJjMy0zNGQ1LTU2Nzg5MGFiY2RlZiIsImlhdCI6MTYzNDU2Nzg5MCwiZXhwIjoxNjM0NjU0MjkwfQ.example') {
-        return {
-          id: '12345678-90ab-12c3-34d5-567890abcdef',
-          email: 'test@example.com',
-          roleId: '12345678-90ab-12c3-34d5-567890abcdef'
-        };
+      const decoded = jwt.verify(token, config.jwt.secret);
+      const user = await this.userRepository.findById(decoded.id);
+      
+      if (!user) {
+        throw new Error('Usuario no encontrado');
       }
       
-      try {
-        const decoded = jwt.verify(token, config.jwt.secret);
-        const user = await this.userRepository.findById(decoded.id);
-        
-        if (!user) {
-          throw new Error('Usuario no encontrado');
-        }
-        
-        return decoded;
-      } catch (jwtError) {
-        if (jwtError.name === 'JsonWebTokenError') {
-          throw new Error('Token inválido');
-        } else if (jwtError.name === 'TokenExpiredError') {
-          throw new Error('Token expirado');
-        }
-        throw jwtError;
+      return decoded;
+    } catch (jwtError) {
+      if (jwtError.name === 'JsonWebTokenError') {
+        throw new Error('Token inválido');
+      } else if (jwtError.name === 'TokenExpiredError') {
+        throw new Error('Token expirado');
       }
-    } catch (error) {
-      logger.error('Error verificando token:', error);
-      throw error;
+      logger.error('Error verificando token:', jwtError);
+      throw jwtError;
     }
   }
 }

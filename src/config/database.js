@@ -1,4 +1,5 @@
 import { Sequelize } from 'sequelize';
+import { Logger } from '../utils/logger.js';
 import config from './database.config.js';
 
 class DatabaseConnection {
@@ -6,10 +7,10 @@ class DatabaseConnection {
     const env = process.env.NODE_ENV || 'development';
     const dbConfig = config[env];
     
-    console.log('\n[Database] Iniciando configuración de conexión...');
-    console.log(`[Database] Entorno: ${env}`);
-    console.log(`[Database] Host: ${dbConfig.host}`);
-    console.log(`[Database] Base de datos: ${dbConfig.database}`);
+    Logger.database('Iniciando configuración de conexión...');
+    Logger.database(`Entorno: ${env}`);
+    Logger.database(`Host: ${dbConfig.host}`);
+    Logger.database(`Base de datos: ${dbConfig.database}`);
     
     this.sequelize = new Sequelize(
       dbConfig.database,
@@ -32,19 +33,19 @@ class DatabaseConnection {
 
   async connect() {
     try {
-      console.log('\n[Database] Estableciendo conexión con la base de datos...');
+      Logger.database('Estableciendo conexión con la base de datos...');
       await this.sequelize.authenticate();
-      console.log('[Database] Conexión establecida correctamente');
-      console.log('[Database] Configuración del pool de conexiones:');
-      console.log('  - Conexiones máximas: 5');
-      console.log('  - Tiempo de adquisición: 30000ms');
-      console.log('  - Tiempo de inactividad: 10000ms\n');
+      Logger.success('Database', 'Conexión establecida correctamente');
+      Logger.database('Configuración del pool de conexiones:');
+      Logger.database('  - Conexiones máximas: 5');
+      Logger.database('  - Tiempo de adquisición: 30000ms');
+      Logger.database('  - Tiempo de inactividad: 10000ms');
       return this.sequelize;
     } catch (error) {
-      console.error('\n[Database] Error en la conexión a la base de datos:');
-      console.error(`  - Mensaje: ${error.message}`);
-      console.error(`  - Código: ${error.code}`);
-      console.error(`  - Stack: ${error.stack}\n`);
+      Logger.error('Database', 'Error en la conexión a la base de datos:');
+      Logger.error('Database', `  - Mensaje: ${error.message}`);
+      Logger.error('Database', `  - Código: ${error.code}`);
+      Logger.error('Database', `  - Stack: ${error.stack}`);
       throw error;
     }
   }

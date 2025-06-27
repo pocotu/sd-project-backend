@@ -1,4 +1,5 @@
 import { authService } from '../../application/services/auth.service.js';
+import { Logger } from '../../utils/logger.js';
 
 export class AuthController {
   constructor() {
@@ -7,6 +8,8 @@ export class AuthController {
 
   async register(req, res) {
     try {
+      Logger.auth('Intento de registro de nuevo usuario');
+      
       // Adaptar formato de datos si es necesario
       const adaptedData = {
         email: req.body.email || req.body.CORREO,
@@ -15,12 +18,17 @@ export class AuthController {
         lastName: req.body.lastName || req.body.APELLIDO
       };
       
+      Logger.auth(`Registrando usuario: ${adaptedData.email}`);
       const result = await authService.register(adaptedData);
+      
+      Logger.success('Auth', `Usuario registrado exitosamente: ${adaptedData.email}`);
       res.status(201).json({
         status: 'success',
         data: result
       });
     } catch (error) {
+      Logger.error('Auth', `Error en registro: ${error.message}`);
+      
       // Manejo específico para email duplicado
       if (error.message === 'El email ya está registrado' || 
           (error.name === 'SequelizeUniqueConstraintError' && error.errors && error.errors[0].path === 'email')) {
@@ -47,23 +55,30 @@ export class AuthController {
 
   async login(req, res) {
     try {
+      Logger.auth('Intento de inicio de sesión');
+      
       // Adaptar formato de datos si es necesario
       const email = req.body.email || req.body.CORREO;
       const password = req.body.password || req.body.CONTRASENA;
       
       if (!email || !password) {
+        Logger.warn('Auth', 'Intento de login sin email o contraseña');
         return res.status(400).json({
           status: 'error',
           message: 'Email y contraseña son requeridos'
         });
       }
       
+      Logger.auth(`Usuario intentando login: ${email}`);
       const result = await authService.login(email, password);
+      
+      Logger.success('Auth', `Login exitoso para: ${email}`);
       res.status(200).json({
         status: 'success',
         data: result
       });
     } catch (error) {
+      Logger.error('Auth', `Error en login: ${error.message}`);
       res.status(401).json({
         status: 'error',
         message: 'Credenciales inválidas'

@@ -14,16 +14,6 @@ export class AuthMiddleware {
 
       const token = authHeader.split(' ')[1];
       
-      // Ignorar el token de prueba fijo
-      if (token === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMzQ1Njc4LTkwYWItMTJjMy0zNGQ1LTU2Nzg5MGFiY2RlZiIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsInJvbGVJZCI6IjEyMzQ1Njc4LTkwYWItMTJjMy0zNGQ1LTU2Nzg5MGFiY2RlZiIsImlhdCI6MTYzNDU2Nzg5MCwiZXhwIjoxNjM0NjU0MjkwfQ.example') {
-        req.user = {
-          id: '12345678-90ab-12c3-34d5-567890abcdef',
-          email: 'test@example.com',
-          roleId: '12345678-90ab-12c3-34d5-567890abcdef'
-        };
-        return next();
-      }
-      
       try {
         const decoded = await authService.verifyToken(token);
         req.user = decoded;

@@ -1,3 +1,7 @@
+# Configuracion de environment
+.env
+.env.test
+
 db_docs
 
 # Ignorar archivos de sistema

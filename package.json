@@ -1,7 +1,7 @@
 {
   "name": "sd-project-backend",
   "version": "1.0.0",
-  "description": "Backend API para proyecto universitario",
+  "description": "Backend API",
   "type": "module",
   "main": "src/server.js",
   "scripts": {

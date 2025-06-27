@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import { errorHandler } from './api/middlewares/error.middleware.js';
+import { requestLogger } from './api/middlewares/request-logger.middleware.js';
 import routes from './api/routes/index.js';
 import { logger } from './infrastructure/utils/logger.js';
 
@@ -21,6 +22,9 @@ class ExpressConfig {
     
     // Middleware de compresión
     this.app.use(compression());
+    
+    // Middleware de logging de peticiones
+    this.app.use(requestLogger);
     
     // Middleware para parsear JSON
     this.app.use(express.json());

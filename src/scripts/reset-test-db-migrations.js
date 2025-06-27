@@ -1,10 +1,10 @@
 import { Sequelize } from 'sequelize';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import dotenv from 'dotenv';
 import { logger } from '../infrastructure/utils/logger.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 // Load test environment variables
 dotenv.config({ path: '.env.test' });
@@ -68,7 +68,6 @@ const resetTestDatabase = async () => {
         logger.info(`Migration ${file} completed successfully`);
       } catch (err) {
         logger.error(`Error running migration ${file}:`, err.message);
-        logger.error('Full error:', err);
         // Continue with other migrations for now
       }
     }
@@ -78,18 +77,18 @@ const resetTestDatabase = async () => {
       await sequelize.query(`
         INSERT INTO roles (id, nombre, descripcion, activo, created_at) 
         VALUES ('19e959e4-5239-11f0-8ed1-244bfe6df6f7', 'user', 'Usuario regular', 1, NOW())
-        ON DUPLICATE KEY UPDATE activo = 1;
+        ON DUPLICATE KEY UPDATE updated_at = NOW();
       `);
       
       await sequelize.query(`
         INSERT INTO roles (id, nombre, descripcion, activo, created_at) 
         VALUES ('19e959e4-5239-11f0-8ed1-244bfe6df6f8', 'admin', 'Administrador del sistema', 1, NOW())
-        ON DUPLICATE KEY UPDATE activo = 1;
+        ON DUPLICATE KEY UPDATE updated_at = NOW();
       `);
       
       logger.info('Test roles seeded successfully');
     } catch (roleError) {
-      logger.error('Error seeding test roles:', roleError.message, roleError);
+      logger.warn('Error seeding test roles:', roleError.message);
     }
 
     // Seed test categories for products
@@ -99,12 +98,12 @@ const resetTestDatabase = async () => {
         (1, 'Alimentos', 'Productos alimenticios', 'alimentos', 1, NOW()),
         (2, 'Artesanías', 'Productos artesanales', 'artesanias', 1, NOW()),
         (3, 'Servicios', 'Servicios varios', 'servicios', 1, NOW())
-        ON DUPLICATE KEY UPDATE activo = 1;
+        ON DUPLICATE KEY UPDATE updated_at = NOW();
       `);
       
       logger.info('Test categories seeded successfully');
     } catch (categoryError) {
-      logger.error('Error seeding test categories:', categoryError.message, categoryError);
+      logger.warn('Error seeding test categories:', categoryError.message);
     }
 
     logger.info('Test database reset completed successfully');

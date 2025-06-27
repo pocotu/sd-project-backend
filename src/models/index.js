@@ -10,6 +10,10 @@ import ImagenProducto from './ImagenProducto.js';
 import Review from './Review.js';
 import SellerRating from './SellerRating.js';
 import Contact from './Contact.js';
+import Cart from './Cart.js';
+import CartItem from './CartItem.js';
+import Order from './Order.js';
+import OrderItem from './OrderItem.js';
 
 import UsuarioRoles from './UsuarioRoles.js';
 import Permiso from './Permiso.js';
@@ -27,6 +31,10 @@ const models = {
   Review,
   SellerRating,
   Contact,
+  Cart,
+  CartItem,
+  Order,
+  OrderItem,
   UsuarioRoles,
   Permiso,
   RolPermisos
@@ -104,6 +112,26 @@ Permiso.belongsToMany(Role, {
   as: 'roles'
 });
 
+// Cart associations
+User.hasMany(Cart, { foreignKey: 'usuario_id', as: 'carritos' });
+Cart.belongsTo(User, { foreignKey: 'usuario_id', as: 'usuario' });
+
+Cart.hasMany(CartItem, { foreignKey: 'carrito_id', as: 'items' });
+CartItem.belongsTo(Cart, { foreignKey: 'carrito_id', as: 'carrito' });
+
+Product.hasMany(CartItem, { foreignKey: 'producto_id', as: 'carritoItems' });
+CartItem.belongsTo(Product, { foreignKey: 'producto_id', as: 'producto' });
+
+// Order associations
+User.hasMany(Order, { foreignKey: 'userId', as: 'pedidos' });
+Order.belongsTo(User, { foreignKey: 'userId', as: 'usuario' });
+
+Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'items' });
+OrderItem.belongsTo(Order, { foreignKey: 'orderId', as: 'pedido' });
+
+Product.hasMany(OrderItem, { foreignKey: 'productId', as: 'pedidoItems' });
+OrderItem.belongsTo(Product, { foreignKey: 'productId', as: 'producto' });
+
 // Initialize associations
 Object.values(models).forEach((model) => {
   if (model.associate) {
@@ -124,6 +152,10 @@ export {
   Review,
   SellerRating,
   Contact,
+  Cart,
+  CartItem,
+  Order,
+  OrderItem,
   UsuarioRoles,
   Permiso,
   RolPermisos

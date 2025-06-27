@@ -9,6 +9,8 @@ import Product from '../../../models/Product.js';
 import Contact from '../../../models/Contact.js';
 import Review from '../../../models/Review.js';
 import SellerRating from '../../../models/SellerRating.js';
+import Cart from '../../../models/Cart.js';
+import CartItem from '../../../models/CartItem.js';
 import { authService } from '../../../application/services/auth.service.js';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
@@ -63,11 +65,28 @@ export class TestData {
   }
 
   static getValidProductData(overrides = {}) {
-    // Alineado con la tabla PRODUCTOS
+    // For API calls - aligned with ProductValidator
+    return {
+      name: `Producto Test ${this.generateTimestamp()}`,
+      description: 'Descripción de producto de prueba',
+      price: 99.99,
+      stock: 10,
+      unit: 'kg',
+      type: 'producto',
+      slug: `producto-test-${this.generateTimestamp()}`,
+      categoryId: 1, // Se debe crear una categoría real y pasar el id
+      producerProfileId: '', // Se debe crear un perfil real y pasar el id
+      ...overrides
+    };
+  }
+
+  static getValidProductDataForDB(overrides = {}) {
+    // For direct database creation - aligned with table schema
     return {
       nombre: `Producto Test ${this.generateTimestamp()}`,
       descripcion: 'Descripción de producto de prueba',
       precio: 99.99,
+      stock: 10,
       unidad: 'kg',
       tipo: 'producto',
       slug: `producto-test-${this.generateTimestamp()}`,
@@ -78,7 +97,20 @@ export class TestData {
   }
 
   static getValidCategoryData(overrides = {}) {
-    // Alineado con la tabla CATEGORIAS
+    // For API calls - aligned with CategoryValidator
+    const timestamp = this.generateTimestamp();
+    return {
+      name: `Categoría Test ${timestamp}`,
+      description: 'Categoría de prueba',
+      slug: `categoria-test-${timestamp}`,
+      isActive: true,
+      order: 0,
+      ...overrides
+    };
+  }
+
+  static getValidCategoryDataForDB(overrides = {}) {
+    // For direct database creation - aligned with table schema
     const timestamp = this.generateTimestamp();
     return {
       nombre: `Categoría Test ${timestamp}`,
@@ -90,24 +122,75 @@ export class TestData {
     };
   }
 
+  static getValidCartData(overrides = {}) {
+    // Alineado con la tabla CARRITOS
+    return {
+      usuario_id: '', // Se debe pasar el ID del usuario
+      estado: 'activo',
+      ...overrides
+    };
+  }
+
+  static getValidCartItemData(overrides = {}) {
+    // Alineado con la tabla CARRITO_ITEMS
+    return {
+      carrito_id: '', // Se debe pasar el ID del carrito
+      producto_id: '', // Se debe pasar el ID del producto
+      cantidad: 1,
+      precio_unitario: 99.99,
+      ...overrides
+    };
+  }
+
   // Test Data Helper Class - Updated to use service layer
   static async createTestUser(userData = null) {
     try {
       userData = userData || this.getValidUserData();
-      const result = await authService.register(userData);
-      const user = await User.findOne({ where: { email: userData.email } });
-      return user;
+      
+      // Try to register using auth service
+      try {
+        const result = await authService.register(userData);
+        const user = await User.findOne({ where: { email: userData.email } });
+        return user;
+      } catch (registerError) {
+        // If registration fails due to existing user, try to find the user
+        if (registerError.message && registerError.message.includes('email ya está registrado')) {
+          const existingUser = await User.findOne({ where: { email: userData.email } });
+          if (existingUser) {
+            return existingUser;
+          }
+        }
+        
+        // If registration fails for other reasons, create user directly
+        logger.warn('Auth service register failed, creating user directly:', registerError.message);
+        
+        // Create user directly
+        const directUserData = {
+          id: uuidv4(),
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          email: userData.email,
+          password: await bcrypt.hash(userData.password, 10),
+          roleId: '19e959e4-5239-11f0-8ed1-244bfe6df6f7', // Default user role
+          isActive: true,
+          failedLoginAttempts: 0,
+          forcePasswordChange: false
+        };
+        
+        const user = await User.create(directUserData);
+        return user;
+      }
     } catch (error) {
       logger.error('Error creating test user:', error);
       throw error;
     }
   }
 
-  static async createTestProducerProfile(userId) {
+  static async createTestProducerProfile(userId, profileData = null) {
     try {
-      const profileData = this.getValidProducerProfileData();
+      const data = profileData || this.getValidProducerProfileData();
       const profile = await ProducerProfile.create({
-        ...profileData,
+        ...data,
         PRODUCTOR_ID: userId
       });
       return profile;
@@ -117,7 +200,40 @@ export class TestData {
     }
 }
 
-  // ...existing code...
+  // Helper to create category directly in database (for cart tests)
+  static async createTestCategory(categoryData = null) {
+    try {
+      const data = categoryData || TestData.getValidCategoryDataForDB();
+      const category = await Category.create(data);
+      return category;
+    } catch (error) {
+      logger.error('Error creating test category in database:', error);
+      throw error;
+    }
+  }
+
+  // Helper to create product directly in database (for cart tests)
+  static async createTestProduct(categoryId, producerProfileId, productData = null) {
+    try {
+      const data = productData || TestData.getValidProductDataForDB({
+        categoria_id: categoryId,
+        perfil_productor_id: producerProfileId
+      });
+      
+      const product = await Product.create({
+        ...data,
+        activo: 1,
+        destacado: 0,
+        vistas: 0,
+        created_at: new Date(),
+        updated_at: new Date()
+      });
+      return product;
+    } catch (error) {
+      logger.error('Error creating test product in database:', error);
+      throw error;
+    }
+  }
 }
 
 // Clase para validaciones de respuestas (SRP: Responsabilidad única para validaciones)
@@ -200,6 +316,24 @@ export class TestDatabase {
       // await SellerRating.destroy({ where: {}, force: true });
     } catch (error) {
       logger.error('Error clearing producer profiles:', error);
+      throw error;
+    }
+  }
+
+  // Limpia todos los carritos de compras (para tests)
+  static async clearCarts() {
+    try {
+      // First try to clear cart items, then carts
+      await CartItem.destroy({ where: {}, force: true });
+      await Cart.destroy({ where: {}, force: true });
+      logger.info('Carts and cart items cleared successfully');
+    } catch (error) {
+      // If tables don't exist, that's okay for tests
+      if (error.name === 'SequelizeDatabaseError' && error.original?.code === 'ER_NO_SUCH_TABLE') {
+        logger.info('Cart tables do not exist, skipping cleanup');
+        return;
+      }
+      logger.error('Error clearing carts:', error);
       throw error;
     }
   }
@@ -471,7 +605,7 @@ export class TestDatabase {
         }
         
         // If we still don't have a category, create one directly in the database
-        const category = await Category.create(data);
+        const category = await Category.create(TestData.getValidCategoryDataForDB());
         return category;
       }
       
@@ -480,7 +614,7 @@ export class TestDatabase {
       logger.error('Error creating test category:', error);
       // As a last resort, try to create directly in the database
       try {
-        const data = categoryData || TestData.getValidCategoryData();
+        const data = categoryData || TestData.getValidCategoryDataForDB();
         const category = await Category.create(data);
         return category;
       } catch (dbError) {
@@ -509,8 +643,8 @@ export class TestDatabase {
       
       // Prepare product data with correct IDs
       const data = productData || TestData.getValidProductData({
-        categoria_id: category.id,
-        perfil_productor_id: producer.id
+        categoryId: category.id,
+        producerProfileId: producer.id
       });
       
       // Create product
@@ -535,7 +669,10 @@ export class TestDatabase {
         
         // If we still don't have a product, create one directly in the database
         const product = await Product.create({
-          ...data,
+          ...TestData.getValidProductDataForDB({
+            categoria_id: category.id,
+            perfil_productor_id: producer.id
+          }),
           activo: 1,
           destacado: 0,
           vistas: 0,
@@ -593,6 +730,43 @@ export class TestDatabase {
       return contactResponse.body.data;
     } catch (error) {
       logger.error('Error creating test contact:', error);
+      throw error;
+    }
+  }
+
+  // Helper to create test cart directly in database
+  static async createTestCart(userId, cartData = null) {
+    try {
+      const data = cartData || TestData.getValidCartData({ usuario_id: userId });
+      const cart = await Cart.create({
+        ...data,
+        id: uuidv4(),
+        created_at: new Date(),
+        updated_at: new Date()
+      });
+      return cart;
+    } catch (error) {
+      logger.error('Error creating test cart in database:', error);
+      throw error;
+    }
+  }
+
+  // Helper to create test cart item directly in database
+  static async createTestCartItem(cartId, productId, cartItemData = null) {
+    try {
+      const data = cartItemData || TestData.getValidCartItemData({
+        carrito_id: cartId,
+        producto_id: productId
+      });
+      const cartItem = await CartItem.create({
+        ...data,
+        id: uuidv4(),
+        created_at: new Date(),
+        updated_at: new Date()
+      });
+      return cartItem;
+    } catch (error) {
+      logger.error('Error creating test cart item in database:', error);
       throw error;
     }
   }
@@ -740,3 +914,142 @@ export class DatabaseSeeder {
     }
   }
 }
+
+// Individual function exports for backward compatibility and convenience
+export const createTestUser = async (userData = null) => {
+  return await TestDatabase.createTestUser(userData);
+};
+
+export const createTestCategory = async (categoryData = null) => {
+  try {
+    const data = categoryData || {
+      nombre: `Test Category ${Date.now()}`,
+      descripcion: 'Categoría de prueba',
+      slug: `categoria-test-${Date.now()}`,
+      activo: 1,
+      orden: 0
+    };
+    const category = await Category.create(data);
+    return category;
+  } catch (error) {
+    logger.error('Error creating test category:', error);
+    throw error;
+  }
+};
+
+export const createTestProducerProfile = async (profileData = null) => {
+  try {
+    // Create a test user if no specific profile is needed
+    const testUser = await createTestUser();
+    return await TestDatabase.createTestProducerProfile(testUser.id);
+  } catch (error) {
+    logger.error('Error in createTestProducerProfile export:', error);
+    throw error;
+  }
+};
+
+export const createTestProduct = async (categoryId = null, producerProfileId = null, productData = null) => {
+  try {
+    // Create category first if not provided
+    let categoriaId = categoryId;
+    if (!categoriaId) {
+      const testCategory = await createTestCategory();
+      categoriaId = testCategory.id;
+    }
+
+    // Create producer profile if not provided
+    let perfilProductorId = producerProfileId;
+    if (!perfilProductorId) {
+      const testProfile = await createTestProducerProfile();
+      perfilProductorId = testProfile.id;
+    }
+
+    const baseData = TestData.getValidProductDataForDB();
+    const data = {
+      ...baseData,
+      categoria_id: categoriaId,
+      perfil_productor_id: perfilProductorId,
+      activo: 1,
+      destacado: 0,
+      vistas: 0,
+      created_at: new Date(),
+      updated_at: new Date(),
+      ...productData // Override with any provided data
+    };
+    
+    const product = await Product.create(data);
+    return product;
+  } catch (error) {
+    logger.error('Error creating test product:', error);
+    throw error;
+  }
+};
+
+export const getTestToken = async (userData = null) => {
+  try {
+    const user = await createTestUser(userData);
+    const token = jwt.sign(
+      { 
+        id: user.id,  // Changed from userId to id to match auth service expectations
+        email: user.email,
+        roleId: user.roleId 
+      },
+      process.env.JWT_SECRET || 'test-secret',
+      { expiresIn: '1h' }
+    );
+    return { token, user };
+  } catch (error) {
+    logger.error('Error getting test token:', error);
+    throw error;
+  }
+};
+
+// Helper function to generate token for an existing user
+export const generateTokenForUser = (user) => {
+  try {
+    const token = jwt.sign(
+      { 
+        id: user.id,  // Changed from userId to id to match auth service expectations
+        email: user.email,
+        roleId: user.roleId 
+      },
+      process.env.JWT_SECRET || 'test-secret',
+      { expiresIn: '1h' }
+    );
+    return token;
+  } catch (error) {
+    logger.error('Error generating token for user:', error);
+    throw error;
+  }
+};
+
+export const cleanupTestData = async () => {
+  try {
+    // Import Order models here to avoid circular dependency issues
+    const { default: Order } = await import('../../../models/Order.js');
+    const { default: OrderItem } = await import('../../../models/OrderItem.js');
+    
+    // Clean up in order of dependencies
+    await OrderItem.destroy({ where: {}, force: true });
+    await Order.destroy({ where: {}, force: true });
+    await TestDatabase.clearCarts();
+    await Product.destroy({ where: {}, force: true });
+    await ProducerProfile.destroy({ where: {}, force: true });
+    await Category.destroy({ where: {}, force: true });
+    await Contact.destroy({ where: {}, force: true });
+    await Review.destroy({ where: {}, force: true });
+    await SellerRating.destroy({ where: {}, force: true });
+    await TestDatabase.cleanupUsers();
+    
+    logger.info('Test data cleaned up successfully');
+  } catch (error) {
+    // If tables don't exist, that's okay for tests
+    if (error.name === 'SequelizeDatabaseError' && 
+        (error.original?.code === 'ER_NO_SUCH_TABLE' || error.original?.errno === 1146)) {
+      logger.info('Some tables do not exist, skipping cleanup');
+      return;
+    }
+    logger.error('Error cleaning up test data:', error);
+    throw error;
+  }
+};

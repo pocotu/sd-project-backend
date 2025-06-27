@@ -1,4 +1,4 @@
-import { validationResult, body } from 'express-validator';
+import { validationResult, body, param } from 'express-validator';
 import { AppError } from './error.middleware.js';
 
 // Clase base para validadores (OCP: Abierto para extensión)
@@ -6,7 +6,12 @@ export class BaseValidator {
   static validate(req, res, next) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      throw new AppError('Datos de usuario inválidos', 400, errors.array());
+      return res.status(400).json({
+        success: false,
+        status: 'error',
+        message: 'Datos de usuario inválidos',
+        details: errors.array()
+      });
     }
     next();
   }
@@ -310,12 +315,101 @@ export class ProducerProfileValidator extends BaseValidator {
   }
 }
 
+// Validador para carritos de compras (SRP: Responsabilidad única para validación de carritos)
+export class CartValidator extends BaseValidator {
+  static validateAddProduct() {
+    return [
+      body('productId')
+        .notEmpty()
+        .withMessage('El ID del producto es obligatorio')
+        .isInt({ min: 1 })
+        .withMessage('El ID del producto debe ser un número entero válido'),
+      body('cantidad')
+        .optional()
+        .isInt({ min: 1, max: 100 })
+        .withMessage('La cantidad debe ser un número entero entre 1 y 100'),
+      BaseValidator.validate
+    ];
+  }
+
+  static validateUpdateQuantity() {
+    return [
+      body('cantidad')
+        .notEmpty()
+        .withMessage('La cantidad es obligatoria')
+        .isInt({ min: 1, max: 100 })
+        .withMessage('La cantidad debe ser un número entero entre 1 y 100'),
+      BaseValidator.validate
+    ];
+  }
+}
+
+// Validador para pedidos (SRP: Responsabilidad única para validación de pedidos)
+export class OrderValidator extends BaseValidator {
+  static validateCreate() {
+    return [
+      body('direccionEntrega')
+        .optional()
+        .trim()
+        .isLength({ max: 500 })
+        .withMessage('La dirección de entrega no puede exceder 500 caracteres'),
+      body('telefonoContacto')
+        .optional()
+        .trim()
+        .matches(/^[\+]?[0-9\-\(\)\s]+$/)
+        .withMessage('El formato del teléfono no es válido')
+        .isLength({ max: 20 })
+        .withMessage('El teléfono no puede exceder 20 caracteres'),
+      body('notasEspeciales')
+        .optional()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage('Las notas especiales no pueden exceder 1000 caracteres'),
+      body('fechaEstimadaEntrega')
+        .optional()
+        .isISO8601()
+        .withMessage('La fecha de entrega debe tener un formato válido')
+        .custom((value) => {
+          const inputDate = new Date(value);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          if (inputDate < today) {
+            throw new Error('La fecha de entrega no puede ser en el pasado');
+          }
+          return true;
+        }),
+      BaseValidator.validate
+    ];
+  }
+
+  static validateUpdateStatus() {
+    return [
+      body('estado')
+        .notEmpty()
+        .withMessage('El estado es obligatorio')
+        .isIn(['pendiente', 'confirmado', 'enviado', 'entregado', 'cancelado'])
+        .withMessage('Estado de pedido inválido'),
+      BaseValidator.validate
+    ];
+  }
+
+  static validateOrderId() {
+    return [
+      param('id')
+        .isInt({ min: 1 })
+        .withMessage('El ID del pedido debe ser un número entero válido'),
+      BaseValidator.validate
+    ];
+  }
+}
+
 // Middleware reutilizable para validación de request
 export function validateRequest(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
-      status: 'error',
+      success: false,
       message: 'Datos de usuario inválidos',
       errors: errors.array()
     });

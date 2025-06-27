@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { app } from '../../../app.js';
-import { Sequelize } from 'sequelize';
+import sequelize from '../../../config/database.js';
 import { logger } from '../../../infrastructure/utils/logger.js';
 import {
   User,
@@ -15,7 +15,11 @@ import {
   Lote,
   UsuarioRoles,
   Permiso,
-  RolPermisos
+  RolPermisos,
+  Cart,
+  CartItem,
+  Order,
+  OrderItem
 } from '../../../models/index.js';
 
 // Load test environment variables
@@ -34,28 +38,13 @@ export const globalTestConfig = {
 // Test Setup class (SRP: Manages test environment setup)
 export class TestSetup {
   static app = app;
-  static database = null;
+  static database = sequelize;
 
   static async initializeDatabase() {
     try {
-      if (!this.database) {
-        this.database = new Sequelize({
-          host: process.env.DB_HOST || 'localhost',
-          username: process.env.DB_USER,
-          password: process.env.DB_PASSWORD,
-          database: process.env.DB_TEST_NAME,
-          dialect: 'mysql',
-          logging: false,
-          define: {
-            timestamps: true,
-            underscored: true
-          }
-        });
-
-        // Test the connection
-        await this.database.authenticate();
-        logger.info('Test database connection established successfully');
-      }
+      // Use the app's database connection
+      await this.database.authenticate();
+      logger.info('Test database connection established successfully');
       return this.database;
     } catch (error) {
       logger.error('Unable to connect to the test database:', error);
@@ -75,6 +64,10 @@ export class TestSetup {
         'ROL_PERMISOS',
         'USUARIO_ROLES',
         'PERMISOS',
+        'PEDIDO_ITEMS',
+        'PEDIDOS',
+        'CARRITO_ITEMS',
+        'CARRITOS',
         'producto_lotes',
         'lotes',
         'productos',
@@ -105,6 +98,10 @@ export class TestSetup {
         Category,
         ProducerProfile,
         Product,
+        Cart,
+        CartItem,
+        Order,
+        OrderItem,
         Lote,
         ProductoLote,
         Contact,
@@ -140,11 +137,8 @@ export class TestSetup {
 
   static async cleanupTestEnvironment() {
     try {
-      if (this.database) {
-        await this.database.close();
-        this.database = null;
-        logger.info('Test database connection closed');
-      }
+      // Note: Don't close the database connection as it's shared with the app
+      logger.info('Test environment cleanup completed');
     } catch (error) {
       logger.error('Error cleaning up test environment:', error);
       throw error;

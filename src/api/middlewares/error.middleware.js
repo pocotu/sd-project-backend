@@ -21,10 +21,8 @@ const handleDevelopmentError = (err, res) => {
   });
 
   res.status(err.statusCode).json({
-    status: err.status,
-    error: err,
+    success: false,
     message: err.message,
-    stack: err.stack,
     details: err.details || null
   });
 };
@@ -33,7 +31,7 @@ const handleDevelopmentError = (err, res) => {
 const handleProductionError = (err, res) => {
   if (err.isOperational) {
     res.status(err.statusCode).json({
-      status: err.status,
+      success: false,
       message: err.message,
       details: err.details || null
     });
@@ -44,7 +42,7 @@ const handleProductionError = (err, res) => {
     });
 
     res.status(500).json({
-      status: 'error',
+      success: false,
       message: 'Algo salió mal'
     });
   }
@@ -55,11 +53,19 @@ export const errorHandler = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
+  // Añadir el status en el formato esperado por los tests
+  const response = {
+    success: false,
+    status: 'error',
+    message: err.message,
+    details: err.details || null
+  };
+
   if (process.env.NODE_ENV === 'development') {
-    handleDevelopmentError(err, res);
-  } else {
-    handleProductionError(err, res);
+    response.stack = err.stack;
   }
+
+  res.status(err.statusCode).json(response);
 };
 
 export class ErrorMiddleware {
@@ -70,7 +76,7 @@ export class ErrorMiddleware {
     const isTestEnvironment = process.env.NODE_ENV === 'test';
     
     const error = {
-      status: 'error',
+      success: false,
       message: err.message || 'Error interno del servidor',
       ...(isTestEnvironment && {
         stack: err.stack,

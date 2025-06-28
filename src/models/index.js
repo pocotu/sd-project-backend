@@ -98,6 +98,12 @@ Role.belongsToMany(User, {
   as: 'usuarios'
 });
 
+// Additional associations for UsuarioRoles to support direct queries
+UsuarioRoles.belongsTo(User, { foreignKey: 'usuario_id', as: 'usuario' });
+UsuarioRoles.belongsTo(Role, { foreignKey: 'rol_id', as: 'role' });
+User.hasMany(UsuarioRoles, { foreignKey: 'usuario_id', as: 'usuarioRoles' });
+Role.hasMany(UsuarioRoles, { foreignKey: 'rol_id', as: 'usuarioRoles' });
+
 // ROL_PERMISOS (Many-to-Many Role <-> Permiso)
 Role.belongsToMany(Permiso, {
   through: RolPermisos,
@@ -111,6 +117,12 @@ Permiso.belongsToMany(Role, {
   otherKey: 'rol_id',
   as: 'roles'
 });
+
+// Additional associations for RolPermisos to support direct queries
+RolPermisos.belongsTo(Role, { foreignKey: 'rol_id', as: 'role' });
+RolPermisos.belongsTo(Permiso, { foreignKey: 'permiso_id', as: 'permiso' });
+Role.hasMany(RolPermisos, { foreignKey: 'rol_id', as: 'rolPermisos' });
+Permiso.hasMany(RolPermisos, { foreignKey: 'permiso_id', as: 'rolPermisos' });
 
 // Cart associations
 User.hasMany(Cart, { foreignKey: 'usuario_id', as: 'carritos' });

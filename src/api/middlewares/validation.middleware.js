@@ -1,4 +1,4 @@
-import { validationResult, body, param } from 'express-validator';
+import { validationResult, body, param, query } from 'express-validator';
 import { AppError } from './error.middleware.js';
 
 // Clase base para validadores (OCP: Abierto para extensión)
@@ -401,6 +401,34 @@ export class OrderValidator extends BaseValidator {
         .withMessage('El ID del pedido debe ser un número entero válido'),
       BaseValidator.validate
     ];
+  }
+}
+
+// Clase principal para middleware de validación
+export class ValidationMiddleware {
+  static body(field) {
+    return body(field);
+  }
+
+  static query(field) {
+    return query(field);
+  }
+
+  static param(field) {
+    return param(field);
+  }
+
+  static handleValidationErrors(req, res, next) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        status: 'error',
+        message: 'Datos de validación inválidos',
+        details: errors.array()
+      });
+    }
+    next();
   }
 }
 

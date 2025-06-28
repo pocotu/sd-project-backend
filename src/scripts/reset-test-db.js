@@ -15,13 +15,23 @@ const __dirname = dirname(__filename);
 
 // Database configuration for test environment
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_TEST_NAME || 'emprendimiento_db_test',
+  database: process.env.DB_TEST_NAME,
   dialect: 'mysql',
   logging: false
 };
+
+// Validate required environment variables
+const requiredVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_TEST_NAME'];
+const missingVars = requiredVars.filter(varName => !process.env[varName]);
+
+if (missingVars.length > 0) {
+  console.error('Missing required environment variables:', missingVars);
+  process.exit(1);
+}
 
 // Create Sequelize instance
 const sequelize = new Sequelize(
@@ -30,6 +40,7 @@ const sequelize = new Sequelize(
   dbConfig.password,
   {
     host: dbConfig.host,
+    port: dbConfig.port,
     dialect: dbConfig.dialect,
     logging: dbConfig.logging,
     define: {

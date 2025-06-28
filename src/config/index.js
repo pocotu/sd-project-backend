@@ -1,8 +1,16 @@
 import dotenv from 'dotenv';
-import { logger } from '../infrastructure/utils/logger.js';
+import path from 'path';
+import { Logger } from '../utils/logger.js';
 
-// Forzar que .env sobrescriba variables de entorno existentes
-dotenv.config({ override: true });
+// Load environment-specific configuration
+if (process.env.NODE_ENV === 'test') {
+  // Load test environment variables with override
+  const testEnvPath = path.resolve(process.cwd(), '.env.test');
+  dotenv.config({ path: testEnvPath, override: true });
+} else {
+  // Forzar que .env sobrescriba variables de entorno existentes
+  dotenv.config({ override: true });
+}
 
 // Clase para manejo de configuración (SRP)
 class Config {
@@ -35,20 +43,30 @@ class Config {
       'JWT_SECRET'
     ];
 
+    // Para tests, también requerir DB_TEST_NAME
+    if (process.env.NODE_ENV === 'test') {
+      requiredEnvVars.push('DB_TEST_NAME');
+    }
+
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
     if (missingVars.length > 0) {
-      logger.error('Missing required environment variables:', missingVars);
-      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+      const errorMsg = `Missing required environment variables: ${missingVars.join(', ')}`;
+      Logger.error('Config', errorMsg);
+      throw new Error(errorMsg);
     }
 
     // Validar que el puerto sea un número válido si está definido
     if (process.env.PORT) {
       const port = parseInt(process.env.PORT);
       if (isNaN(port) || port < 1 || port > 65535) {
-        throw new Error(`Invalid port number: ${process.env.PORT}. Port must be between 1 and 65535.`);
+        const errorMsg = `Invalid port number: ${process.env.PORT}. Port must be between 1 and 65535.`;
+        Logger.error('Config', errorMsg);
+        throw new Error(errorMsg);
       }
     }
+    
+    Logger.info('Config', 'All environment variables validated successfully');
   }
 
   get database() {
@@ -89,13 +107,6 @@ class Config {
     return {
       origin: process.env.CORS_ORIGIN || this.defaults.CORS_ORIGIN,
       credentials: true
-    };
-  }
-
-  get jwt() {
-    return {
-      secret: process.env.JWT_SECRET,
-      expiresIn: process.env.JWT_EXPIRES_IN || this.defaults.JWT_EXPIRES_IN
     };
   }
 

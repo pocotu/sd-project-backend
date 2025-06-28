@@ -1,5 +1,9 @@
 import { jest } from '@jest/globals';
 import { logger } from '../infrastructure/utils/logger.js';
+import dotenv from 'dotenv';
+
+// Load test environment variables first
+dotenv.config({ path: '.env.test', override: true });
 
 // Función de ayuda para suprimir console.log durante los tests
 const suppressConsoleOutput = () => {

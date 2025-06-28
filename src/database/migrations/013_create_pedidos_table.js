@@ -50,17 +50,17 @@ const migration = {
         type: Sequelize.STRING(20),
         allowNull: true
       },
-      createdAt: {
+      created_at: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       },
-      updatedAt: {
+      updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
       },
-      deletedAt: {
+      deleted_at: {
         type: Sequelize.DATE,
         allowNull: true
       }
@@ -75,7 +75,7 @@ const migration = {
       name: 'idx_pedidos_estado'
     });
     
-    await queryInterface.addIndex('PEDIDOS', ['createdAt'], {
+    await queryInterface.addIndex('PEDIDOS', ['created_at'], {
       name: 'idx_pedidos_created'
     });
   },

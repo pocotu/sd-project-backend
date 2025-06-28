@@ -8,12 +8,23 @@ require('dotenv').config();
 // Configuración de la base de datos
 const dbConfig = {
   host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   dialect: 'mysql',
   logging: console.log
 };
+
+// Validar variables de entorno requeridas
+const requiredVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const missingVars = requiredVars.filter(varName => !process.env[varName]);
+
+if (missingVars.length > 0) {
+  console.error('❌ Falta(n) variable(s) de entorno requerida(s):', missingVars);
+  console.error('Por favor, verifica tu archivo .env y asegúrate de que todas las variables de la base de datos estén configuradas.');
+  process.exit(1);
+}
 
 // Crear instancia de Sequelize
 const sequelize = new Sequelize(

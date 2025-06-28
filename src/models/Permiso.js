@@ -11,7 +11,6 @@ const Permiso = sequelize.define('Permiso', {
   accion: {
     type: DataTypes.STRING(100),
     allowNull: false,
-    unique: true,
     field: 'accion'
   },
   recurso: {
@@ -32,7 +31,14 @@ const Permiso = sequelize.define('Permiso', {
   }
 }, {
   tableName: 'PERMISOS',
-  timestamps: false
+  timestamps: false,
+  indexes: [
+    {
+      unique: true,
+      fields: ['accion', 'recurso'],
+      name: 'uk_permisos_accion_recurso'
+    }
+  ]
 });
 
 export default Permiso;

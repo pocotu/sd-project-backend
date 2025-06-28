@@ -12,6 +12,7 @@ import SellerRating from '../../../models/SellerRating.js';
 import Cart from '../../../models/Cart.js';
 import CartItem from '../../../models/CartItem.js';
 import { authService } from '../../../application/services/auth.service.js';
+import { TestTokenService } from '../services/test-token.service.js';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -365,6 +366,27 @@ export class TestDatabase {
       return result.user;
     } catch (error) {
       logger.error('Error creating test user:', error);
+      throw error;
+    }
+  }
+
+  static async createTestUserWithRole(userData, roleName = 'user') {
+    try {
+      await this.seedRoles();
+      const role = await Role.findOne({ where: { nombre: roleName } });
+      if (!role) {
+        throw new Error(`Role '${roleName}' not found`);
+      }
+      
+      const userDataWithRole = {
+        ...userData,
+        roleId: role.id
+      };
+      
+      const result = await TestUserFactory.createUserThroughService(userDataWithRole);
+      return result.user;
+    } catch (error) {
+      logger.error(`Error creating test user with role ${roleName}:`, error);
       throw error;
     }
   }
@@ -896,9 +918,79 @@ export class DatabaseSeeder {
         });
       }
 
-      logger.info('Roles seeded successfully');
+      // Seed permissions after roles are created
+      await this.seedPermissions();
+
+      logger.info('Roles and permissions seeded successfully');
     } catch (error) {
       logger.error('Error seeding roles:', error);
+      throw error;
+    }
+  }
+
+  // Function to seed permissions and role-permission relationships
+  static async seedPermissions() {
+    try {
+      const Permiso = (await import('../../../models/Permiso.js')).default;
+      const RolPermisos = (await import('../../../models/RolPermisos.js')).default;
+      const UsuarioRoles = (await import('../../../models/UsuarioRoles.js')).default;
+      
+      // Basic permissions needed for tests
+      const permissions = [
+        { accion: 'leer', recurso: 'metricas', descripcion: 'Ver métricas y estadísticas' },
+        { accion: 'leer', recurso: 'productos', descripcion: 'Ver productos' },
+        { accion: 'leer', recurso: 'usuarios', descripcion: 'Ver usuarios' },
+        { accion: 'leer', recurso: 'roles', descripcion: 'Ver roles' },
+        { accion: 'crear', recurso: 'roles', descripcion: 'Crear roles' },
+        { accion: 'actualizar', recurso: 'roles', descripcion: 'Actualizar roles' },
+        { accion: 'eliminar', recurso: 'roles', descripcion: 'Eliminar roles' },
+        { accion: 'asignar', recurso: 'roles', descripcion: 'Asignar roles a usuarios' },
+        { accion: 'administrar', recurso: 'sistema', descripcion: 'Administración completa del sistema' }
+      ];
+      
+      // Create permissions if they don't exist
+      for (const permission of permissions) {
+        const [permiso] = await Permiso.findOrCreate({
+          where: { accion: permission.accion, recurso: permission.recurso },
+          defaults: permission
+        });
+        
+        // Assign all permissions to admin role
+        const adminRole = await Role.findOne({ where: { nombre: 'admin' } });
+        if (adminRole) {
+          await RolPermisos.findOrCreate({
+            where: { rol_id: adminRole.id, permiso_id: permiso.id },
+            defaults: { rol_id: adminRole.id, permiso_id: permiso.id }
+          });
+        }
+      }
+      
+      logger.info('Permissions seeded successfully for tests');
+    } catch (error) {
+      logger.error('Error seeding permissions:', error);
+      throw error;
+    }
+  }
+
+  // Function to assign roles to users correctly
+  static async assignUserRole(userId, roleName) {
+    try {
+      const UsuarioRoles = (await import('../../../models/UsuarioRoles.js')).default;
+      
+      const role = await Role.findOne({ where: { nombre: roleName } });
+      if (!role) {
+        throw new Error(`Role ${roleName} not found`);
+      }
+      
+      // Assign role to user in UsuarioRoles table
+      await UsuarioRoles.findOrCreate({
+        where: { usuario_id: userId, rol_id: role.id },
+        defaults: { usuario_id: userId, rol_id: role.id }
+      });
+      
+      logger.info(`Role ${roleName} assigned to user ${userId}`);
+    } catch (error) {
+      logger.error('Error assigning user role:', error);
       throw error;
     }
   }
@@ -916,8 +1008,33 @@ export class DatabaseSeeder {
 }
 
 // Individual function exports for backward compatibility and convenience
-export const createTestUser = async (userData = null) => {
-  return await TestDatabase.createTestUser(userData);
+export const createTestUser = async (emailOrUserData = null, roleName = 'user') => {
+  // Handle backward compatibility for different parameter patterns
+  let userData;
+  
+  if (typeof emailOrUserData === 'string') {
+    // Legacy pattern: createTestUser('email@test.com', 'roleName')
+    userData = {
+      email: emailOrUserData,
+      password: 'Password123!',
+      firstName: 'Test',
+      lastName: 'User'
+    };
+    // Keep the roleName parameter as passed
+  } else {
+    // New pattern: createTestUser(userDataObject) or createTestUser()
+    userData = emailOrUserData || TestData.getValidUserData();
+    // If userData is provided but roleName not explicitly set, use default
+    if (emailOrUserData && roleName === 'user') {
+      roleName = 'user'; // Keep default for object pattern
+    }
+  }
+  
+  return await createTestUserWithRole(userData, roleName);
+};
+
+export const createTestUserWithRole = async (userData, roleName = 'user') => {
+  return await TestDatabase.createTestUserWithRole(userData, roleName);
 };
 
 export const createTestCategory = async (categoryData = null) => {
@@ -990,11 +1107,11 @@ export const getTestToken = async (userData = null) => {
     const user = await createTestUser(userData);
     const token = jwt.sign(
       { 
-        id: user.id,  // Changed from userId to id to match auth service expectations
+        id: user.id,
         email: user.email,
         roleId: user.roleId 
       },
-      process.env.JWT_SECRET,
+      TestTokenService.getJwtSecret(),
       { expiresIn: '1h' }
     );
     return { token, user };
@@ -1004,17 +1121,17 @@ export const getTestToken = async (userData = null) => {
   }
 };
 
-// Helper function to generate token for an existing user
 export const generateTokenForUser = (user) => {
   try {
+    const secret = process.env.JWT_SECRET || 'test_secret_key_emprendimiento_platform_2024_secure';
     const token = jwt.sign(
       { 
-        id: user.id,  // Changed from userId to id to match auth service expectations
+        id: user.id, 
         email: user.email,
         roleId: user.roleId 
       },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      secret,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
     return token;
   } catch (error) {
@@ -1023,6 +1140,11 @@ export const generateTokenForUser = (user) => {
   }
 };
 
+export const assignUserRole = async (userId, roleName) => {
+  return await DatabaseSeeder.assignUserRole(userId, roleName);
+};
+
+// Helper function to clean up test data
 export const cleanupTestData = async () => {
   try {
     // Import Order models here to avoid circular dependency issues

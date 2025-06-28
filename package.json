@@ -18,7 +18,8 @@
     "migrate": "cross-env NODE_ENV=development node src/scripts/migrate-ordered.js",
     "seed": "cross-env NODE_ENV=development node src/scripts/migrate-ordered.js --seed",
     "migrate:test": "cross-env NODE_ENV=test node src/scripts/migrate-ordered.js",
-    "seed:test": "cross-env NODE_ENV=test node src/scripts/migrate-ordered.js --seed"
+    "seed:test": "cross-env NODE_ENV=test node src/scripts/migrate-ordered.js --seed",
+    "verify-config": "node src/scripts/verify-config.js"
   },
   "keywords": [],
   "author": "kai",

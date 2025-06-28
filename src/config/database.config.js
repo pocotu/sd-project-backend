@@ -4,10 +4,11 @@ dotenv.config();
 
 const config = {
   development: {
-    database: process.env.DB_NAME || 'emprendimiento_db',
+    database: process.env.DB_NAME,
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
     dialect: 'mysql',
     logging: console.log,
     define: {
@@ -16,10 +17,11 @@ const config = {
     }
   },
   test: {
-    database: process.env.DB_TEST_NAME || 'emprendimiento_db_test',
+    database: process.env.DB_TEST_NAME,
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
     dialect: 'mysql',
     logging: false,
     define: {
@@ -32,6 +34,7 @@ const config = {
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
     dialect: 'mysql',
     logging: false,
     define: {

@@ -1,7 +1,8 @@
-import dotenv from 'dotenv';
+import { testConfig } from './test-config.service.js';
+import './test-initializer.service.js'; // Auto-initialize test environment
 import { app } from '../../../app.js';
 import sequelize from '../../../config/database.js';
-import { logger } from '../../../infrastructure/utils/logger.js';
+import { Logger } from '../../../utils/logger.js';
 import {
   User,
   Role,
@@ -22,18 +23,8 @@ import {
   OrderItem
 } from '../../../models/index.js';
 
-// Load test environment variables
-dotenv.config({ path: '.env.test' });
-
-if (!process.env.DB_TEST_NAME) {
-  throw new Error('DB_TEST_NAME environment variable is required for tests');
-}
-
 // Global test configuration with longer timeouts for Windows
-export const globalTestConfig = {
-  testTimeout: 30000,
-  setupTimeout: 30000
-};
+export const globalTestConfig = testConfig.getTestConfig();
 
 // Test Setup class (SRP: Manages test environment setup)
 export class TestSetup {
@@ -44,10 +35,10 @@ export class TestSetup {
     try {
       // Use the app's database connection
       await this.database.authenticate();
-      logger.info('Test database connection established successfully');
+      Logger.database('Test database connection established successfully');
       return this.database;
     } catch (error) {
-      logger.error('Unable to connect to the test database:', error);
+      Logger.error('Database', `Unable to connect to the test database: ${error.message}`);
       throw error;
     }
   }
@@ -115,9 +106,9 @@ export class TestSetup {
         await model.sync({ force: true });
       }
 
-      logger.info('Test database tables reset successfully');
+      Logger.database('Test database tables reset successfully');
     } catch (error) {
-      logger.error('Error resetting test database:', error);
+      Logger.error('Database', `Error resetting test database: ${error.message}`);
       // Asegurar que las restricciones de clave foránea se reactiven
       await this.database.query('SET FOREIGN_KEY_CHECKS = 1');
       throw error;
@@ -128,9 +119,9 @@ export class TestSetup {
     try {
       await this.initializeDatabase();
       await this.setupTestDatabase();
-      logger.info('Test environment setup completed');
+      Logger.database('Test environment setup completed');
     } catch (error) {
-      logger.error('Error setting up test environment:', error);
+      Logger.error('Database', `Error setting up test environment: ${error.message}`);
       throw error;
     }
   }
@@ -138,9 +129,9 @@ export class TestSetup {
   static async cleanupTestEnvironment() {
     try {
       // Note: Don't close the database connection as it's shared with the app
-      logger.info('Test environment cleanup completed');
+      Logger.database('Test environment cleanup completed');
     } catch (error) {
-      logger.error('Error cleaning up test environment:', error);
+      Logger.error('Database', `Error cleaning up test environment: ${error.message}`);
       throw error;
     }
   }

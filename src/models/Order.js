@@ -51,10 +51,7 @@ const Order = sequelize.define('Order', {
   tableName: 'PEDIDOS',
   timestamps: true,
   paranoid: true,
-  underscored: false,
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt',
+  underscored: true,
   indexes: [
     {
       fields: ['usuario_id']
@@ -63,7 +60,7 @@ const Order = sequelize.define('Order', {
       fields: ['estado']
     },
     {
-      fields: ['createdAt']
+      fields: ['created_at']
     }
   ]
 });

@@ -15,6 +15,8 @@ import orderRoutes from './order.routes.js';
 import roleRoutes from './role.routes.js';
 import permissionRoutes from './permission.routes.js';
 import metricsRoutes from './metrics.routes.js';
+import exportReportRoutes from './exportReport.routes.js';
+import insigniaRoutes from './insignia.routes.js';
 
 // Configurar rutas
 router.use('/auth', authRoutes);
@@ -30,6 +32,8 @@ router.use('/orders', orderRoutes);
 router.use('/roles', roleRoutes);
 router.use('/permissions', permissionRoutes);
 router.use('/metrics', metricsRoutes);
+router.use('/reports', exportReportRoutes);
+router.use('/insignias', insigniaRoutes);
 
 // Ruta de prueba
 router.get('/health', (req, res) => {

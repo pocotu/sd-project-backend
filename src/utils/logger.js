@@ -39,3 +39,4 @@ class Logger {
 }
 
 export { Logger };
+export const logger = Logger; // Export for lowercase compatibility

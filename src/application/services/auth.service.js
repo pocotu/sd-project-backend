@@ -59,8 +59,11 @@ class AuthService {
         throw new Error(passwordValidation.message);
       }
 
-      // Buscar el roleId del rol 'user'
-      const userRole = await this.roleRepository.findByName('user');
+      // Buscar el roleId del rol por defecto (user o consumidor)
+      let userRole = await this.roleRepository.findByName('user');
+      if (!userRole) {
+        userRole = await this.roleRepository.findByName('consumidor');
+      }
       if (!userRole) throw new Error('Default role not found');
 
       const hashedPassword = await bcrypt.hash(adaptedUserData.password, 10);

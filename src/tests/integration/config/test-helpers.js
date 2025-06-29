@@ -11,6 +11,8 @@ import Review from '../../../models/Review.js';
 import SellerRating from '../../../models/SellerRating.js';
 import Cart from '../../../models/Cart.js';
 import CartItem from '../../../models/CartItem.js';
+import Insignia from '../../../models/Insignia.js';
+import UsuarioInsignia from '../../../models/UsuarioInsignia.js';
 import { authService } from '../../../application/services/auth.service.js';
 import { TestTokenService } from '../services/test-token.service.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -143,6 +145,20 @@ export class TestData {
     };
   }
 
+  static getValidInsigniaData(overrides = {}) {
+    // Alineado con la tabla INSIGNIAS
+    const timestamp = this.generateTimestamp();
+    return {
+      nombre: `Insignia Test ${timestamp}`,
+      descripcion: 'Descripción de insignia de prueba',
+      tipo: 'productos',
+      umbral_requerido: 10,
+      icono_url: 'https://example.com/icon.png',
+      activa: true,
+      ...overrides
+    };
+  }
+
   // Test Data Helper Class - Updated to use service layer
   static async createTestUser(userData = null) {
     try {
@@ -235,6 +251,18 @@ export class TestData {
       throw error;
     }
   }
+
+  // Helper to create insignia directly in database (for insignia tests)
+  static async createTestInsignia(insigniaData = null) {
+    try {
+      const data = insigniaData || TestData.getValidInsigniaData();
+      const insignia = await Insignia.create(data);
+      return insignia;
+    } catch (error) {
+      logger.error('Error creating test insignia in database:', error);
+      throw error;
+    }
+  }
 }
 
 // Clase para validaciones de respuestas (SRP: Responsabilidad única para validaciones)
@@ -278,7 +306,14 @@ export class TestAssertions {
   // Test Assertions Helper class
   static assertSuccessResponse(response, status = 200) {
     expect(response.status).toBe(status);
-    expect(response.body).toHaveProperty('status', 'success');
+    // Check for either 'status' or 'success' property depending on the API response format
+    if (response.body.hasOwnProperty('status')) {
+      expect(response.body).toHaveProperty('status', 'success');
+    } else if (response.body.hasOwnProperty('success')) {
+      expect(response.body).toHaveProperty('success', true);
+    } else {
+      throw new Error('Response must have either "status" or "success" property');
+    }
     return response.body;
   }
 
@@ -338,6 +373,25 @@ export class TestDatabase {
       throw error;
     }
   }
+
+  // Limpia todas las insignias (para tests)
+  static async clearInsignias() {
+    try {
+      // First clear user-insignia associations, then insignias
+      await UsuarioInsignia.destroy({ where: {}, force: true });
+      await Insignia.destroy({ where: {}, force: true });
+      logger.info('Insignias and user associations cleared successfully');
+    } catch (error) {
+      // If tables don't exist, that's okay for tests
+      if (error.name === 'SequelizeDatabaseError' && error.original?.code === 'ER_NO_SUCH_TABLE') {
+        logger.info('Insignia tables do not exist, skipping cleanup');
+        return;
+      }
+      logger.error('Error clearing insignias:', error);
+      throw error;
+    }
+  }
+
   // Dependency Inversion: Use DatabaseSeeder instead of direct role creation
   static async seedRoles() {
     return await DatabaseSeeder.seedRoles();
@@ -384,6 +438,10 @@ export class TestDatabase {
       };
       
       const result = await TestUserFactory.createUserThroughService(userDataWithRole);
+      
+      // Asegurar que el rol esté asignado en la tabla USUARIO_ROLES
+      await DatabaseSeeder.assignUserRole(result.user.id, roleName);
+      
       return result.user;
     } catch (error) {
       logger.error(`Error creating test user with role ${roleName}:`, error);
@@ -944,6 +1002,14 @@ export class DatabaseSeeder {
         { accion: 'crear', recurso: 'roles', descripcion: 'Crear roles' },
         { accion: 'actualizar', recurso: 'roles', descripcion: 'Actualizar roles' },
         { accion: 'eliminar', recurso: 'roles', descripcion: 'Eliminar roles' },
+        { accion: 'asignar', recurso: 'roles', descripcion: 'Asignar roles a usuarios' },
+        { accion: 'administrar', recurso: 'sistema', descripcion: 'Administración completa del sistema' },
+        // Permisos de insignias necesarios para los tests
+        { accion: 'crear', recurso: 'insignias', descripcion: 'Crear nuevas insignias' },
+        { accion: 'leer', recurso: 'insignias', descripcion: 'Ver insignias' },
+        { accion: 'actualizar', recurso: 'insignias', descripcion: 'Actualizar insignias' },
+        { accion: 'eliminar', recurso: 'insignias', descripcion: 'Eliminar insignias' },
+        { accion: 'asignar', recurso: 'insignias', descripcion: 'Otorgar insignias a usuarios' },
         { accion: 'asignar', recurso: 'roles', descripcion: 'Asignar roles a usuarios' },
         { accion: 'administrar', recurso: 'sistema', descripcion: 'Administración completa del sistema' }
       ];

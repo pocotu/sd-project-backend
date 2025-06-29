@@ -18,6 +18,9 @@ import OrderItem from './OrderItem.js';
 import UsuarioRoles from './UsuarioRoles.js';
 import Permiso from './Permiso.js';
 import RolPermisos from './RolPermisos.js';
+import ExportReport from './ExportReport.js';
+import Insignia from './Insignia.js';
+import UsuarioInsignia from './UsuarioInsignia.js';
 
 const models = {
   User,
@@ -37,7 +40,10 @@ const models = {
   OrderItem,
   UsuarioRoles,
   Permiso,
-  RolPermisos
+  RolPermisos,
+  ExportReport,
+  Insignia,
+  UsuarioInsignia
 };
 
 // Definir asociaciones
@@ -144,6 +150,30 @@ OrderItem.belongsTo(Order, { foreignKey: 'orderId', as: 'pedido' });
 Product.hasMany(OrderItem, { foreignKey: 'productId', as: 'pedidoItems' });
 OrderItem.belongsTo(Product, { foreignKey: 'productId', as: 'producto' });
 
+// Export Reports associations
+User.hasMany(ExportReport, { foreignKey: 'usuario_id', as: 'reportes' });
+ExportReport.belongsTo(User, { foreignKey: 'usuario_id', as: 'usuario' });
+
+// Insignias associations (Many-to-Many User <-> Insignia)
+User.belongsToMany(Insignia, {
+  through: UsuarioInsignia,
+  foreignKey: 'usuario_id',
+  otherKey: 'insignia_id',
+  as: 'insignias'
+});
+Insignia.belongsToMany(User, {
+  through: UsuarioInsignia,
+  foreignKey: 'insignia_id',
+  otherKey: 'usuario_id',
+  as: 'usuarios'
+});
+
+// Additional associations for UsuarioInsignia to support direct queries
+UsuarioInsignia.belongsTo(User, { foreignKey: 'usuario_id', as: 'usuario' });
+UsuarioInsignia.belongsTo(Insignia, { foreignKey: 'insignia_id', as: 'insignia' });
+User.hasMany(UsuarioInsignia, { foreignKey: 'usuario_id', as: 'usuarioInsignias' });
+Insignia.hasMany(UsuarioInsignia, { foreignKey: 'insignia_id', as: 'usuarioInsignias' });
+
 // Initialize associations
 Object.values(models).forEach((model) => {
   if (model.associate) {
@@ -170,5 +200,8 @@ export {
   OrderItem,
   UsuarioRoles,
   Permiso,
-  RolPermisos
+  RolPermisos,
+  ExportReport,
+  Insignia,
+  UsuarioInsignia
 };

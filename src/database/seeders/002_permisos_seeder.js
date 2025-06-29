@@ -35,6 +35,14 @@ export default {
       // Métricas y Reportes
       { accion: 'leer', recurso: 'metricas', descripcion: 'Ver métricas y estadísticas' },
       { accion: 'exportar', recurso: 'reportes', descripcion: 'Exportar reportes' },
+      { accion: 'eliminar', recurso: 'reportes', descripcion: 'Eliminar reportes expirados' },
+      
+      // Insignias y Gamificación
+      { accion: 'crear', recurso: 'insignias', descripcion: 'Crear nuevas insignias' },
+      { accion: 'leer', recurso: 'insignias', descripcion: 'Ver insignias' },
+      { accion: 'actualizar', recurso: 'insignias', descripcion: 'Actualizar insignias' },
+      { accion: 'eliminar', recurso: 'insignias', descripcion: 'Eliminar insignias' },
+      { accion: 'asignar', recurso: 'insignias', descripcion: 'Otorgar insignias a usuarios' },
       
       // Administración
       { accion: 'administrar', recurso: 'sistema', descripcion: 'Administración completa del sistema' }

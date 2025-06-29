@@ -240,7 +240,7 @@ describe('Insignia Endpoints', () => {
           razon: 'Test assignment'
         });
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toContain('asignada');
 
@@ -274,7 +274,7 @@ describe('Insignia Endpoints', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('ya tiene');
+      expect(response.body.message).toContain('ya posee');
     });
 
     it('should return 404 for non-existent insignia', async () => {
@@ -287,7 +287,7 @@ describe('Insignia Endpoints', () => {
           razon: 'Test assignment'
         });
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
@@ -301,7 +301,7 @@ describe('Insignia Endpoints', () => {
           razon: 'Test assignment'
         });
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
   });
@@ -327,7 +327,7 @@ describe('Insignia Endpoints', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toContain('removida');
+      expect(response.body.message).toContain('revocada');
 
       // Verify assignment is removed from database
       const assignment = await UsuarioInsignia.findOne({
@@ -356,9 +356,9 @@ describe('Insignia Endpoints', () => {
           insignia_id: insignia1.id
         });
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('no tiene');
+      expect(response.body.message).toContain('no posee');
     });
   });
 

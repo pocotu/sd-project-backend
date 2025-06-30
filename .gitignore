@@ -4,6 +4,10 @@
 
 db_docs
 
+# Ignorar documentos .csv y .pdf
+*.csv
+*.pdf
+
 # Ignorar archivos de sistema
 .DS_Store
 Thumbs.db

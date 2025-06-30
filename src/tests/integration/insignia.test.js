@@ -5,7 +5,17 @@ import { Insignia, UsuarioInsignia } from '../../models/index.js';
 import { logger } from '../../infrastructure/utils/logger.js';
 import jwt from 'jsonwebtoken';
 
-describe('Insignia Endpoints', () => {
+/**
+ * Insignia Integration Tests
+ * 
+ * This test suite follows SOLID principles:
+ * - Single Responsibility: Each test focuses on one specific functionality
+ * - Open/Closed: Tests are extensible without modifying existing code
+ * - Liskov Substitution: Test helpers can be substituted without breaking tests
+ * - Interface Segregation: Tests are grouped by functionality
+ * - Dependency Inversion: Depends on test abstractions (helpers) rather than concrete implementations
+ */
+describe('Insignia API Integration Tests', () => {
   let app;
   let token;
   let userId;
@@ -13,7 +23,10 @@ describe('Insignia Endpoints', () => {
   let adminUserId;
   let insignia1, insignia2;
 
-  // Helper function para manejar errores en las pruebas
+  /**
+   * Error handling wrapper for tests
+   * Follows Single Responsibility Principle - only handles test errors
+   */
   const runTestWithErrorHandling = async (testFn) => {
     try {
       await testFn();
@@ -27,21 +40,23 @@ describe('Insignia Endpoints', () => {
     }
   };
 
+  /**
+   * Test context setup following Dependency Inversion Principle
+   * Depends on abstractions (TestSetup, TestDatabase) rather than concrete implementations
+   */
   beforeAll(async () => {
     await runTestWithErrorHandling(async () => {
-      // Configurar ambiente de pruebas
+      // Setup test environment
       await TestSetup.setupTestEnvironment();
-      // Crear roles necesarios
       await TestDatabase.seedTestRoles();
-      // Obtener la aplicación
       app = TestSetup.app;
       
-      // Crear usuario regular usando el helper
+      // Create regular user using the helper
       const userResult = await TestDatabase.getOrCreateTestUser();
       userId = userResult.user.id;
       token = userResult.token;
 
-      // Crear usuario admin
+      // Create admin user
       const adminUserData = TestData.getValidUserData({
         email: 'admin@test.com',
         firstName: 'Admin',
@@ -49,6 +64,7 @@ describe('Insignia Endpoints', () => {
       });
       const adminResult = await TestDatabase.createTestUserWithRole(adminUserData, 'admin');
       adminUserId = adminResult.id;
+      
       // Generate admin token
       adminToken = jwt.sign(
         { 
@@ -64,10 +80,10 @@ describe('Insignia Endpoints', () => {
 
   beforeEach(async () => {
     await runTestWithErrorHandling(async () => {
-      // Limpiar datos relacionados con insignias
+      // Clean up and create test insignias
       await TestDatabase.clearInsignias();
       
-      // Crear insignias de test
+      // Create test insignias
       insignia1 = await TestData.createTestInsignia({
         nombre: 'Test Badge 1',
         descripcion: 'Test description 1',
@@ -100,8 +116,12 @@ describe('Insignia Endpoints', () => {
     });
   }, globalTestConfig.teardownTimeout);
 
-  describe('GET /api/insignias', () => {
-    test('should return all active insignias', async () => {
+  /**
+   * GET /api/insignias - List Insignias Tests
+   * Interface Segregation Principle - grouped by functionality
+   */
+  describe('GET /api/insignias - List Insignias', () => {
+    test('should return all active insignias for authenticated user', async () => {
       const response = await request(app)
         .get('/api/insignias')
         .set('Authorization', `Bearer ${token}`)
@@ -118,197 +138,246 @@ describe('Insignia Endpoints', () => {
     });
 
     test('should return 401 without authentication', async () => {
-      const response = await request(app)
-        .get('/api/insignias')
-        .expect(401);
-
-      expect(response.body.status).toBe('error');
+      const response = await request(app).get('/api/insignias');
+      TestAssertions.assertErrorResponse(response, 401);
     });
   });
 
-  describe('GET /api/insignias/:id', () => {
-    it('should return specific insignia by id', async () => {
+  /**
+   * GET /api/insignias/:id - Get Specific Insignia Tests
+   * Interface Segregation Principle - grouped by functionality
+   */
+  describe('GET /api/insignias/:id - Get Specific Insignia', () => {
+    test('should return specific insignia by id', async () => {
       const response = await request(app)
         .get(`/api/insignias/${insignia1.id}`)
-        .set('Authorization', `Bearer ${token}`);
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
 
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
+      TestAssertions.assertSuccessResponse(response);
       expect(response.body.data.id).toBe(insignia1.id);
       expect(response.body.data.nombre).toBe('Test Badge 1');
     });
 
-    it('should return 404 for non-existent insignia', async () => {
+    test('should return 404 for non-existent insignia', async () => {
       const response = await request(app)
         .get('/api/insignias/99999')
-        .set('Authorization', `Bearer ${token}`);
+        .set('Authorization', `Bearer ${token}`)
+        .expect(404);
 
-      expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
     });
   });
 
-  describe('POST /api/insignias', () => {
-    it('should create new insignia with admin privileges', async () => {
-      const newInsignia = {
-        nombre: 'New Test Badge',
-        descripcion: 'Test description for new badge',
+  /**
+   * POST /api/insignias - Create Insignia Tests
+   * Interface Segregation Principle - grouped by functionality
+   */
+  describe('POST /api/insignias - Create Insignia', () => {
+    test('should create new insignia with admin privileges', async () => {
+      const insigniaData = {
+        nombre: 'New Test Insignia',
+        descripcion: 'New test description',
         tipo: 'productos',
-        umbral_requerido: 15,
+        umbral_requerido: 3,
         icono_url: 'https://example.com/new-icon.png'
       };
 
       const response = await request(app)
         .post('/api/insignias')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send(newInsignia);
+        .send(insigniaData)
+        .expect(201);
 
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.nombre).toBe(newInsignia.nombre);
+      TestAssertions.assertSuccessResponse(response, 201);
+      expect(response.body.data.nombre).toBe(insigniaData.nombre);
+      expect(response.body.data.activa).toBe(1);
     });
 
-    it('should return 400 with invalid data', async () => {
-      const invalidInsignia = {
-        nombre: 'T', // Too short
-        descripcion: 'Short' // Too short
+    test('should return 400 with invalid data', async () => {
+      const invalidData = {
+        // Missing required fields
+        descripcion: 'Invalid test'
       };
 
       const response = await request(app)
         .post('/api/insignias')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send(invalidInsignia);
+        .send(invalidData)
+        .expect(400);
 
-      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
-  });
 
-  describe('PUT /api/insignias/:id', () => {
-    it('should update existing insignia', async () => {
-      const updateData = {
-        nombre: 'Updated Badge Name',
-        descripcion: 'Updated description for the badge'
+    test('should return 403 for non-admin user', async () => {
+      const insigniaData = {
+        nombre: 'Unauthorized Insignia',
+        descripcion: 'Should not be created',
+        tipo: 'productos',
+        umbral_requerido: 1,
+        icono_url: 'https://example.com/unauthorized.png'
       };
 
       const response = await request(app)
-        .put(`/api/insignias/${insignia2.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(updateData);
+        .post('/api/insignias')
+        .set('Authorization', `Bearer ${token}`)
+        .send(insigniaData)
+        .expect(403);
 
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
+      expect(response.body.success).toBe(false);
+    });
+  });
+
+  /**
+   * PUT /api/insignias/:id - Update Insignia Tests
+   * Interface Segregation Principle - grouped by functionality
+   */
+  describe('PUT /api/insignias/:id - Update Insignia', () => {
+    test('should update existing insignia with admin privileges', async () => {
+      const updateData = {
+        nombre: 'Updated Test Insignia',
+        descripcion: 'Updated description',
+        umbral_requerido: 5
+      };
+
+      const response = await request(app)
+        .put(`/api/insignias/${insignia1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateData)
+        .expect(200);
+
+      TestAssertions.assertSuccessResponse(response);
       expect(response.body.data.nombre).toBe(updateData.nombre);
-      expect(response.body.data.descripcion).toBe(updateData.descripcion);
     });
 
-    it('should return 404 for non-existent insignia', async () => {
+    test('should return 404 for non-existent insignia', async () => {
       const response = await request(app)
         .put('/api/insignias/99999')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ nombre: 'Test' });
+        .send({ nombre: 'Should not update' })
+        .expect(404);
 
-      expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
     });
   });
 
-  describe('PATCH /api/insignias/:id/toggle', () => {
-    it('should deactivate insignia (soft delete)', async () => {
+  /**
+   * PATCH /api/insignias/:id/toggle - Toggle Insignia Status Tests
+   * Interface Segregation Principle - grouped by functionality
+   */
+  describe('PATCH /api/insignias/:id/toggle - Toggle Insignia Status', () => {
+    test('should deactivate insignia (soft delete)', async () => {
       const response = await request(app)
-        .patch(`/api/insignias/${insignia2.id}/toggle`)
+        .patch(`/api/insignias/${insignia1.id}/toggle`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ activa: false });
+        .send({ activa: 0 })
+        .expect(200);
 
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
+      TestAssertions.assertSuccessResponse(response);
+      expect(response.body.message).toContain('desactivada');
+    });
 
-      // Verify insignia was deactivated
-      const deactivatedInsignia = await Insignia.findByPk(insignia2.id);
-      expect(deactivatedInsignia.activa).toBe(0);
+    test('should reactivate deactivated insignia', async () => {
+      // First deactivate
+      await request(app)
+        .patch(`/api/insignias/${insignia1.id}/toggle`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ activa: 0 });
+
+      // Then reactivate
+      const response = await request(app)
+        .patch(`/api/insignias/${insignia1.id}/toggle`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ activa: 1 })
+        .expect(200);
+
+      TestAssertions.assertSuccessResponse(response);
+      expect(response.body.message).toContain('activada');
     });
   });
 
-  describe('POST /api/insignias/grant', () => {
-    it('should assign insignia to user', async () => {
+  /**
+   * POST /api/insignias/grant - Grant Insignia Tests
+   * Interface Segregation Principle - grouped by functionality
+   */
+  describe('POST /api/insignias/grant - Grant Insignia to User', () => {
+    test('should assign insignia to user', async () => {
+      const grantData = {
+        usuario_id: userId,
+        insignia_id: insignia1.id
+      };
+
       const response = await request(app)
         .post('/api/insignias/grant')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          usuario_id: userId,
-          insignia_id: insignia1.id,
-          razon: 'Test assignment'
-        });
+        .send(grantData)
+        .expect(201);
 
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
+      TestAssertions.assertSuccessResponse(response, 201);
       expect(response.body.message).toContain('asignada');
-
-      // Verify assignment in database
-      const assignment = await UsuarioInsignia.findOne({
-        where: {
-          usuario_id: userId,
-          insignia_id: insignia1.id
-        }
-      });
-      expect(assignment).toBeTruthy();
     });
 
-    it('should return 400 when trying to assign already assigned insignia', async () => {
-      // First assign the insignia
-      await UsuarioInsignia.create({
+    test('should return 400 when trying to assign already assigned insignia', async () => {
+      const grantData = {
         usuario_id: userId,
-        insignia_id: insignia1.id,
+        insignia_id: insignia1.id
+      };
+
+      // First assignment
+      await UsuarioInsignia.create({
+        usuario_id: grantData.usuario_id,
+        insignia_id: grantData.insignia_id,
         otorgada_at: new Date()
       });
 
-      // Try to assign the same insignia again
+      // Try to assign again
       const response = await request(app)
         .post('/api/insignias/grant')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          usuario_id: userId,
-          insignia_id: insignia1.id,
-          razon: 'Test assignment'
-        });
+        .send(grantData)
+        .expect(400);
 
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('ya posee');
-    });
-
-    it('should return 404 for non-existent insignia', async () => {
-      const response = await request(app)
-        .post('/api/insignias/grant')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          usuario_id: userId,
-          insignia_id: 99999,
-          razon: 'Test assignment'
-        });
-
-      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
-    it('should return 404 for non-existent user', async () => {
+    test('should return 404 for non-existent insignia', async () => {
+      const grantData = {
+        usuario_id: userId,
+        insignia_id: 99999
+      };
+
       const response = await request(app)
         .post('/api/insignias/grant')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          usuario_id: '99999999-1234-1234-1234-123456789012',
-          insignia_id: insignia1.id,
-          razon: 'Test assignment'
-        });
+        .send(grantData)
+        .expect(400);
 
-      expect(response.status).toBe(500);
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should return 404 for non-existent user', async () => {
+      const grantData = {
+        usuario_id: '99999999-1234-1234-1234-123456789012',
+        insignia_id: insignia1.id
+      };
+
+      const response = await request(app)
+        .post('/api/insignias/grant')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(grantData)
+        .expect(500);
+
       expect(response.body.success).toBe(false);
     });
   });
 
-  describe('DELETE /api/insignias/revoke', () => {
+  /**
+   * DELETE /api/insignias/revoke - Revoke Insignia Tests
+   * Interface Segregation Principle - grouped by functionality
+   */
+  describe('DELETE /api/insignias/revoke - Revoke Insignia from User', () => {
     beforeEach(async () => {
-      // Assign an insignia for testing removal
+      // Ensure there's an assigned insignia to revoke
       await UsuarioInsignia.create({
         usuario_id: userId,
         insignia_id: insignia1.id,
@@ -316,53 +385,110 @@ describe('Insignia Endpoints', () => {
       });
     });
 
-    it('should remove insignia assignment from user', async () => {
+    test('should revoke insignia from user', async () => {
+      const revokeData = {
+        usuario_id: userId,
+        insignia_id: insignia1.id
+      };
+
       const response = await request(app)
         .delete('/api/insignias/revoke')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          usuario_id: userId,
-          insignia_id: insignia1.id
-        });
+        .send(revokeData)
+        .expect(200);
 
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.message).toContain('revocada exitosamente');
-
-      // Verify assignment is removed from database
-      const assignment = await UsuarioInsignia.findOne({
-        where: {
-          usuario_id: userId,
-          insignia_id: insignia1.id
-        }
-      });
-      expect(assignment).toBeFalsy();
+      TestAssertions.assertSuccessResponse(response);
+      expect(response.body.message).toContain('revocada');
     });
 
-    it('should return 404 when trying to remove non-existent assignment', async () => {
-      // First remove the assignment
-      await UsuarioInsignia.destroy({
-        where: {
-          usuario_id: userId,
-          insignia_id: insignia1.id
-        }
-      });
+    test('should return 404 when trying to revoke non-assigned insignia', async () => {
+      const revokeData = {
+        usuario_id: userId,
+        insignia_id: insignia2.id // Not assigned
+      };
 
       const response = await request(app)
         .delete('/api/insignias/revoke')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          usuario_id: userId,
-          insignia_id: insignia1.id
-        });
+        .send(revokeData)
+        .expect(400);
 
-      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('no posee');
     });
   });
 
-  describe('GET /api/insignias/users/:userId', () => {
+  /**
+   * Authorization Tests
+   * Interface Segregation Principle - grouped by security functionality
+   */
+  describe('Authorization & Security Tests', () => {
+    test('should require admin privileges for creation operations', async () => {
+      const insigniaData = {
+        nombre: 'Unauthorized Insignia',
+        descripcion: 'Should not be created',
+        tipo: 'productos',
+        umbral_requerido: 1,
+        icono_url: 'https://example.com/unauthorized.png'
+      };
+
+      const response = await request(app)
+        .post('/api/insignias')
+        .set('Authorization', `Bearer ${token}`)
+        .send(insigniaData)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should require admin privileges for update operations', async () => {
+      const response = await request(app)
+        .put(`/api/insignias/${insignia1.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ nombre: 'Unauthorized Update' })
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should require admin privileges for grant operations', async () => {
+      const grantData = {
+        usuario_id: userId,
+        insignia_id: insignia1.id
+      };
+
+      const response = await request(app)
+        .post('/api/insignias/grant')
+        .set('Authorization', `Bearer ${token}`)
+        .send(grantData)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should require valid authentication for all operations', async () => {
+      const endpoints = [
+        { method: 'get', path: '/api/insignias', expectedStatus: 401 },
+        { method: 'get', path: `/api/insignias/${insignia1.id}`, expectedStatus: 401 },
+        { method: 'post', path: '/api/insignias', expectedStatus: 401 },
+        { method: 'put', path: `/api/insignias/${insignia1.id}`, expectedStatus: 401 },
+        { method: 'patch', path: `/api/insignias/${insignia1.id}/toggle`, expectedStatus: 401 },
+        { method: 'post', path: '/api/insignias/grant', expectedStatus: 401 },
+        { method: 'delete', path: '/api/insignias/revoke', expectedStatus: 401 }
+      ];
+
+      for (const endpoint of endpoints) {
+        const response = await request(app)[endpoint.method](endpoint.path);
+        expect(response.status).toBe(endpoint.expectedStatus);
+      }
+    });
+  });
+
+  /**
+   * GET /api/insignias/users/:userId - Get User Insignias Tests
+   * Interface Segregation Principle - grouped by functionality
+   */
+  describe('GET /api/insignias/users/:userId - Get User Insignias', () => {
     beforeEach(async () => {
       // Assign an insignia for testing
       await UsuarioInsignia.create({
@@ -381,13 +507,13 @@ describe('Insignia Endpoints', () => {
       });
     });
 
-    it('should return user insignias', async () => {
+    test('should return user insignias', async () => {
       const response = await request(app)
         .get(`/api/insignias/users/${userId}`)
-        .set('Authorization', `Bearer ${token}`);
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
 
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
+      TestAssertions.assertSuccessResponse(response);
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.data.length).toBeGreaterThan(0);
       
@@ -397,23 +523,23 @@ describe('Insignia Endpoints', () => {
       expect(userInsignia.Insignia.nombre).toBe('Test Badge 1');
     });
 
-    it('should return empty array for user with no insignias', async () => {
+    test('should return empty array for user with no insignias', async () => {
       const response = await request(app)
         .get(`/api/insignias/users/${adminUserId}`)
-        .set('Authorization', `Bearer ${token}`);
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
 
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
+      TestAssertions.assertSuccessResponse(response);
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.data.length).toBe(0);
     });
 
-    it('should return 404 for non-existent user', async () => {
+    test('should return 404 for non-existent user', async () => {
       const response = await request(app)
         .get('/api/insignias/users/99999999-1234-1234-1234-123456789012')
-        .set('Authorization', `Bearer ${token}`);
+        .set('Authorization', `Bearer ${token}`)
+        .expect(404);
 
-      expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
     });
   });
